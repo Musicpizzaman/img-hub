@@ -18,18 +18,19 @@
       #hover{position:fixed;pointer-events:auto;display:flex;gap:8px;background:#0b0f17;border:1px solid #4c6484;border-radius:12px;padding:4px;box-shadow:0 6px 24px #0008}#hover button{border:0;background:none;padding:7px 12px}#hover button:hover{background:#24344c}
       dialog{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#0b0f17f5;color:#f8fafc;pointer-events:auto;overflow:hidden;overscroll-behavior:contain;font:14px system-ui,sans-serif}dialog::backdrop{background:#0b0f17e8}
       header{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:14px;padding:18px 24px;z-index:2;background:linear-gradient(#0b0f17,transparent)}header strong{font-size:20px;white-space:nowrap}header strong span{color:#00c2ff}#caption{color:#b5c1d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}#close{font-size:24px;padding:3px 14px}
-      #stage{position:absolute;inset:78px 22px 96px;overflow:hidden;touch-action:none;cursor:grab;border-radius:14px}#stage.dragging{cursor:grabbing}#photo{position:absolute;left:50%;top:50%;max-width:none;max-height:none;user-select:none;pointer-events:none;transform-origin:0 0;will-change:transform}#message{position:absolute;inset:45% 10% auto;text-align:center;color:#b5c1d4;pointer-events:none}
+      #stage{position:absolute;inset:78px 22px 96px;overflow:hidden;touch-action:none;cursor:grab;border-radius:14px}#stage.dragging{cursor:grabbing}#photo,#video{position:absolute;left:50%;top:50%;max-width:none;max-height:none;user-select:none;pointer-events:none;transform-origin:0 0;will-change:transform}#message{position:absolute;inset:45% 10% auto;text-align:center;color:#b5c1d4;pointer-events:none}
       nav{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;max-width:calc(100% - 24px);padding:8px;border:1px solid #344359;border-radius:16px;background:#131b29;box-shadow:0 10px 35px #0009}#zoom{min-width:58px;text-align:center;font-variant-numeric:tabular-nums}#count{min-width:60px;text-align:center;color:#9caac1;font-variant-numeric:tabular-nums}#hint{position:absolute;bottom:4px;left:0;right:0;text-align:center;color:#a6b4c9;font-size:11px;pointer-events:none}
-      @media(max-width:600px){header{padding:12px}#stage{inset:64px 8px 122px}nav{bottom:30px;flex-wrap:wrap;justify-content:center;width:320px}nav button{padding:7px 10px}#hint{bottom:8px}#caption{font-size:12px}}
+      dialog.video-view #stage{bottom:120px}
+      @media(max-width:600px){header{padding:12px}#stage{inset:64px 8px 122px}nav{bottom:30px;flex-wrap:wrap;justify-content:center;width:320px}nav button{padding:7px 10px}#hint{bottom:8px}#caption{font-size:12px}dialog.video-view #stage{bottom:180px}}
     </style>
     <div id="hover" hidden><button id="view" type="button" aria-label="View image in IMG Hub">◉ View image</button></div>
-    <dialog aria-label="IMG Hub image viewer">
+    <dialog aria-label="IMG Hub viewer">
       <header><strong>IMG <span>Hub</span></strong><span id="caption"></span><button id="close" aria-label="Close image viewer" title="Close (Esc)">×</button></header>
-      <div id="stage"><img id="photo" alt="" draggable="false" hidden><div id="message" role="status" aria-live="polite"></div></div>
-      <nav aria-label="Image controls">
+      <div id="stage"><img id="photo" alt="" draggable="false" hidden><video id="video" preload="auto" playsinline muted loop hidden></video><div id="message" role="status" aria-live="polite"></div></div>
+      <nav aria-label="Picture and clip controls">
         <button id="prev" aria-label="Previous image" title="Previous (←)">←</button><span id="count"></span><button id="next" aria-label="Next image" title="Next (→)">→</button>
         <button id="out" aria-label="Zoom out" title="Zoom out (−)">−</button><output id="zoom" aria-label="Magnification">100%</output><button id="in" aria-label="Zoom in" title="Zoom in (+)">+</button>
-        <button id="reset" title="Reset view (F)">Reset</button><button id="original" title="Original size (0)">1:1</button>
+        <button id="reset" title="Reset view (F)">Reset</button><button id="original" title="Original size (0)">1:1</button><button id="play" type="button" hidden>Play</button><button id="sound" type="button" hidden>Sound on</button>
       </nav><div id="hint">Wheel to zoom · Drag to pan · Arrow keys to browse · Esc to close</div>
     </dialog>`;
   document.documentElement.append(host);
@@ -37,6 +38,9 @@
   const dialog = shadow.querySelector('dialog');
   const stage = $('stage');
   const photo = $('photo');
+  const video = $('video');
+  let media = photo;
+  const suspended = new Map();
   const hover = $('hover');
   const candidates = new Set();
   const visible = new Set();
@@ -56,18 +60,44 @@
     if (candidates.has(element) || element === host) return;
     candidates.add(element); viewport.observe(element);
   }
+  function metadataFor(element, source) {
+    const own = node => node.id + ' ' + (typeof node.className === 'string' ? node.className : node.className?.baseVal || '');
+    const parents = [];
+    let adMarked = false;
+    for (let node = element, depth = 0; node instanceof Element && depth < 4 && !node.matches('html,body'); node = node.parentElement || node.getRootNode().host, depth++) {
+      if (node.hasAttribute('data-ad-slot') || node.hasAttribute('data-ad-client')) adMarked = true;
+      if (node !== element) parents.push(own(node));
+    }
+    const parent = element.parentElement || element.getRootNode().host;
+    const rect = element.getBoundingClientRect();
+    const thumbnailHint = element instanceof HTMLImageElement && !!element.closest('a[href]') && element.naturalWidth >= 512 && rect.width <= 200 && rect.height <= 160 && element.naturalWidth >= rect.width * 4;
+    return {own: own(element), label: element.getAttribute('alt') || element.getAttribute('aria-label') || element.getAttribute('title') || '',
+      context: parents.join(' '), logoContext: parent ? own(parent) : '', thumbnailContext: parent ? own(parent) : '', source, adMarked, thumbnailHint};
+  }
   function sourcesFor(element) {
     if (!(element instanceof Element) || !element.isConnected || element === host || element.getRootNode() === shadow) return [];
     if (!element.checkVisibility({opacityProperty: true, visibilityProperty: true})) return [];
     const rect = element.getBoundingClientRect();
     const img = element instanceof HTMLImageElement;
-    if (!img && !prefs.allImages && !prefs.backgroundImages) return [];
-    if (!C.eligible({width: rect.width, height: rect.height, naturalWidth: img ? element.naturalWidth : rect.width, naturalHeight: img ? element.naturalHeight : rect.height}, prefs.allImages ? 0 : prefs.minWidth)) return [];
-    const urls = img ? [C.safeSource(element.currentSrc || element.src, document.baseURI)].filter(Boolean)
-      : C.backgroundSources(getComputedStyle(element).backgroundImage, document.baseURI);
-    const caption = element.getAttribute('alt') || element.getAttribute('aria-label') || 'Webpage image';
-    return urls.map(url => ({element, url, caption}));
+    const clip = element instanceof HTMLVideoElement;
+    if (!img && !clip && !prefs.backgroundImages) return [];
+    if (clip && element.srcObject) return [];
+    const width = img ? element.naturalWidth : clip ? element.videoWidth || rect.width : rect.width;
+    const height = img ? element.naturalHeight : clip ? element.videoHeight || rect.height : rect.height;
+    if (!C.eligible({width:rect.width,height:rect.height,naturalWidth:width,naturalHeight:height},prefs.minWidth)) return [];
+    let urls;
+    if (img || clip) {
+      let source = element.currentSrc || element.src;
+      if (clip && !source) {
+        const child = [...element.querySelectorAll('source')].find(node => !node.type || element.canPlayType(node.type));
+        source = child?.src;
+      }
+      urls = source ? [C.safeSource(source,document.baseURI)].filter(Boolean) : [];
+    } else urls = C.backgroundSources(getComputedStyle(element).backgroundImage,document.baseURI);
+    const caption = element.getAttribute('alt') || element.getAttribute('aria-label') || element.getAttribute('title') || (clip ? 'Webpage clip' : 'Webpage image');
+    return urls.filter(url => !C.filtered(metadataFor(element,url),prefs)).map(url => ({element,url,caption,kind:clip?'video':'image'}));
   }
+  function isMedia(element) { return element instanceof HTMLImageElement || element instanceof HTMLVideoElement; }
   function sourceFor(element) { return sourcesFor(element)[0] || null; }
   function containsPoint(element, point) {
     const rect = element.getBoundingClientRect();
@@ -79,22 +109,22 @@
     // Hit testing reaches images below sibling covers. Only visible candidates
     // are checked for images that opt out of pointer events.
     for (const element of layers) {
-      if (!(element instanceof HTMLImageElement)) continue;
+      if (!(isMedia(element))) continue;
       const entry = sourceFor(element);
       if (entry) { addCandidate(element); return entry; }
     }
     for (const element of [...visible].reverse()) {
-      if (!(element instanceof HTMLImageElement) || !containsPoint(element, point)) continue;
+      if (!(isMedia(element)) || !containsPoint(element, point)) continue;
       const entry = sourceFor(element);
       if (entry) return entry;
     }
     for (const element of layers) {
-      if (element instanceof HTMLImageElement || !containsPoint(element, point)) continue;
+      if (isMedia(element) || !containsPoint(element, point)) continue;
       const entry = sourceFor(element);
       if (entry) { addCandidate(element); return entry; }
     }
     for (const element of [...visible].reverse()) {
-      if (element instanceof HTMLImageElement || !containsPoint(element, point)) continue;
+      if (isMedia(element) || !containsPoint(element, point)) continue;
       const entry = sourceFor(element);
       if (entry) return entry;
     }
@@ -105,16 +135,38 @@
     if (!hovered || !hovered.element.isConnected || dialog.open) { hideHover(); return; }
     const rect = hovered.element.getBoundingClientRect();
     if (rect.bottom <= 0 || rect.top >= innerHeight || rect.right <= 0 || rect.left >= innerWidth) { hideHover(); return; }
-    hover.style.left = C.clamp(rect.left + 12, 6, innerWidth - hover.offsetWidth - 6) + 'px';
-    hover.style.top = C.clamp(rect.bottom - hover.offsetHeight - 10, 6, innerHeight - hover.offsetHeight - 6) + 'px';
+    const size = {width:hover.offsetWidth,height:hover.offsetHeight};
+    let left = C.clamp(rect.left + 12,6,innerWidth - size.width - 6);
+    let top = rect.bottom + 8;
+    // Keep the control outside the picture, including near viewport edges.
+    if (top + size.height > innerHeight - 6) {
+      if (rect.top - size.height - 8 >= 6) top = rect.top - size.height - 8;
+      else if (rect.right + size.width + 8 <= innerWidth - 6) {
+        left = rect.right + 8; top = C.clamp(pointer?.clientY || rect.top,6,innerHeight - size.height - 6);
+      } else if (rect.left - size.width - 8 >= 6) {
+        left = rect.left - size.width - 8; top = C.clamp(pointer?.clientY || rect.top,6,innerHeight - size.height - 6);
+      }
+    }
+    hover.style.left = left + 'px'; hover.style.top = top + 'px';
+  }
+  function hoverBridge(point) {
+    if (!hovered || hover.hidden) return false;
+    const image = hovered.element.getBoundingClientRect(), button = hover.getBoundingClientRect();
+    const x = point.clientX, y = point.clientY;
+    if (button.top >= image.bottom) return x >= button.left - 8 && x <= button.right + 8 && y >= image.bottom - 2 && y <= button.bottom + 2;
+    if (button.bottom <= image.top) return x >= button.left - 8 && x <= button.right + 8 && y >= button.top - 2 && y <= image.top + 2;
+    if (button.left >= image.right) return y >= button.top - 8 && y <= button.bottom + 8 && x >= image.right - 2 && x <= button.right + 2;
+    if (button.right <= image.left) return y >= button.top - 8 && y <= button.bottom + 8 && x >= button.left - 2 && x <= image.left + 2;
+    return false;
   }
   function updateHover() {
     if (!pointer || dialog.open || !prefs.hoverControls) return;
+    if (hoverBridge(pointer)) { clearTimeout(hoverTimer); return; }
     const entry = findTarget(pointer);
     clearTimeout(hoverTimer);
     if (!entry) { hideHover(); return; }
     if (!hovered) pageFocus = document.activeElement;
-    hovered = entry; hover.hidden = false; positionHover();
+    hovered = entry; $('view').textContent = entry.kind === 'video' ? '▶ View clip' : '◉ View image'; $('view').setAttribute('aria-label',entry.kind === 'video' ? 'View clip in IMG Hub' : 'View image in IMG Hub'); hover.hidden = false; positionHover();
   }
   function scheduleHover() {
     if (hoverScheduled || !pointer || dialog.open || !prefs.hoverControls) return;
@@ -145,6 +197,7 @@
   document.addEventListener('click', event => {
     if (!prefs.directClick || dialog.open || event.target === host || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     const path = event.composedPath();
+    if (path.some(element => element instanceof HTMLVideoElement && element.controls)) return;
     if (path.includes(host) || path.some(element => element instanceof HTMLElement && element.isContentEditable)) return;
     const entry = findTarget({clientX: event.clientX, clientY: event.clientY, path});
     if (!entry) return;
@@ -172,8 +225,8 @@
       task.started = true;
       if (!element) { pending.shift(); continue; }
       if (!(element instanceof Element) || element === host) continue;
-      if (element instanceof HTMLImageElement) addCandidate(element);
-      else if ((prefs.allImages || prefs.backgroundImages) && C.backgroundSources(getComputedStyle(element).backgroundImage, document.baseURI).length) addCandidate(element);
+      if (isMedia(element)) addCandidate(element);
+      else if (prefs.backgroundImages && C.backgroundSources(getComputedStyle(element).backgroundImage, document.baseURI).length) addCandidate(element);
       if (!element.matches('input,select,textarea,video,audio')) {
         const component = element.shadowRoot || element.openOrClosedShadowRoot;
         if (component) observeScope(component);
@@ -182,7 +235,7 @@
     scheduleScan();
   }
   function imageLoaded(event) {
-    if (event.target instanceof HTMLImageElement && event.target.getRootNode() !== shadow) {
+    if (isMedia(event.target) && event.target.getRootNode() !== shadow) {
       addCandidate(event.target); scheduleHover();
     }
   }
@@ -192,8 +245,8 @@
       if (record.type === 'attributes') queueDiscovery(record.target);
       else for (const node of record.addedNodes) {
         if (!(node instanceof Element) || node === host) continue;
-        if (node instanceof HTMLImageElement) addCandidate(node);
-        for (const img of node.querySelectorAll('img')) addCandidate(img);
+        if (isMedia(node)) addCandidate(node);
+        for (const img of node.querySelectorAll('img,video')) addCandidate(img);
         queueDiscovery(node);
       }
     }
@@ -203,7 +256,7 @@
     }
     for (const [scope, observer] of scopes) {
       if (!(scope instanceof ShadowRoot) || scope.host.isConnected) continue;
-      observer.disconnect(); scope.removeEventListener('load', imageLoaded, true); scopes.delete(scope);
+      observer.disconnect(); scope.removeEventListener('load', imageLoaded, true); scope.removeEventListener('loadedmetadata', imageLoaded, true); scopes.delete(scope);
     }
     if (hovered && !sourceFor(hovered.element)) hideHover();
     scheduleHover();
@@ -211,18 +264,18 @@
   function observeScope(scope) {
     if (scopes.has(scope) || scope === shadow) return;
     const observer = new MutationObserver(mutations);
-    observer.observe(scope instanceof Document ? document.documentElement : scope, {subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'srcset', 'sizes', 'style', 'class', 'hidden', 'width', 'height', 'id']});
-    scopes.set(scope, observer); scope.addEventListener('load', imageLoaded, true);
-    for (const img of scope.querySelectorAll('img')) addCandidate(img);
+    observer.observe(scope instanceof Document ? document.documentElement : scope, {subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'srcset', 'sizes', 'style', 'class', 'hidden', 'width', 'height', 'id', 'alt', 'aria-label', 'title', 'data-ad-slot', 'data-ad-client']});
+    scopes.set(scope, observer); scope.addEventListener('load', imageLoaded, true); scope.addEventListener('loadedmetadata', imageLoaded, true);
+    for (const img of scope.querySelectorAll('img,video')) addCandidate(img);
     queueDiscovery(scope instanceof Document ? document.body : scope);
   }
   observeScope(document);
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !changes.preferences) return;
-    const hadBackgrounds = prefs.allImages || prefs.backgroundImages;
+    const hadBackgrounds = prefs.backgroundImages;
     prefs = C.preferences(changes.preferences.newValue);
     hideHover();
-    if (!hadBackgrounds && (prefs.allImages || prefs.backgroundImages)) {
+    if (!hadBackgrounds && prefs.backgroundImages) {
       for (const scope of scopes.keys()) queueDiscovery(scope instanceof Document ? document.body : scope);
     }
     scheduleHover();
@@ -252,7 +305,7 @@
   }
   function close() {
     if (!dialog.open) return;
-    ++loadId; stopDrag(); dialog.close(); photo.hidden = true; photo.removeAttribute('src'); gallery = [];
+    ++loadId; stopDrag(); dialog.close(); stopMedia(); restoreOriginals(); gallery = []; playbackControls();
     if (savedScroll) {
       if (savedScroll.overflow) document.documentElement.style.setProperty('overflow', savedScroll.overflow, savedScroll.priority);
       else document.documentElement.style.removeProperty('overflow');
@@ -261,38 +314,93 @@
     }
     if (pageFocus?.isConnected) pageFocus.focus({preventScroll: true});
   }
+  function stopMedia() {
+    photo.onload = photo.onerror = null;
+    video.onloadeddata = video.onerror = video.onresize = null;
+    video.pause(); video.hidden = true; video.removeAttribute('src'); video.load();
+    photo.hidden = true; photo.removeAttribute('src');
+  }
+  function dimensions() {
+    return media === video ? {width:video.videoWidth,height:video.videoHeight}
+      : {width:photo.naturalWidth,height:photo.naturalHeight};
+  }
+  function playbackControls() {
+    const clip = dialog.open && gallery[index]?.kind === 'video';
+    $('play').hidden = $('sound').hidden = !clip;
+    $('play').textContent = video.paused ? 'Play' : 'Pause';
+    $('sound').textContent = video.muted ? 'Sound on' : 'Sound off';
+  }
+  function playVideo(token = loadId) {
+    video.play().then(() => {
+      if (token === loadId && dialog.open && media === video) $('message').textContent = '';
+    }).catch(error => {
+      if (token === loadId && dialog.open && media === video && error.name !== 'AbortError') $('message').textContent = error.name === 'NotAllowedError' ? 'Click Play to start the clip.' : 'This clip could not be played. Try another or close the viewer.';
+    });
+  }
+  function suspendOriginal(entry) {
+    const original = entry.element;
+    if (!(original instanceof HTMLVideoElement) || original.paused || suspended.has(original)) return;
+    suspended.set(original,entry.url); original.pause();
+  }
+  function restoreOriginals() {
+    for (const [original,url] of suspended) {
+      if (original.isConnected && original.currentSrc === url) original.play().catch(() => {});
+    }
+    suspended.clear();
+  }
   function render() {
-    photo.style.transform = `translate(${view.x - photo.naturalWidth * view.scale / 2}px, ${view.y - photo.naturalHeight * view.scale / 2}px) scale(${view.scale})`;
-    photo.style.imageRendering = view.scale > 1 ? 'pixelated' : 'auto';
-    $('out').disabled = view.scale <= 1;
-    $('zoom').value = `${Math.round(view.scale * 100)}%`;
+    const size = dimensions();
+    media.style.transform = 'translate(' + (view.x-size.width*view.scale/2) + 'px,' + (view.y-size.height*view.scale/2) + 'px) scale(' + view.scale + ')';
+    media.style.imageRendering = view.scale > 1 ? 'pixelated' : 'auto';
+    $('out').disabled = false; $('zoom').value = C.formatZoom(view.scale);
   }
   function reset() {
-    if (!photo.naturalWidth || photo.hidden) return;
-    view = {scale: 1, x: 0, y: 0}; render();
+    if (!dimensions().width || media.hidden) return;
+    view = {scale:1,x:0,y:0}; render();
   }
   function load() {
-    const currentLoad = ++loadId;
-    stopDrag(); photo.hidden = true; $('message').textContent = 'Loading image…'; $('caption').textContent = gallery[index].caption;
-    $('count').textContent = `${index + 1} / ${gallery.length}`;
-    $('prev').disabled = index === 0; $('next').disabled = index === gallery.length - 1;
-    for (const id of ['in', 'out', 'reset', 'original']) $(id).disabled = true;
-    photo.onload = () => {
-      if (currentLoad !== loadId || !dialog.open) return;
-      photo.hidden = false; $('message').textContent = ''; reset();
-      for (const id of ['in', 'reset', 'original']) $(id).disabled = false;
+    const token = ++loadId;
+    stopDrag(); stopMedia();
+    const entry = gallery[index];
+    media = entry.kind === 'video' ? video : photo;
+    dialog.classList.toggle('video-view',media === video);
+    $('message').textContent = media === video ? 'Loading clip…' : 'Loading image…';
+    $('caption').textContent = entry.caption;
+    $('count').textContent = (index+1) + ' / ' + gallery.length;
+    $('prev').disabled = index === 0; $('next').disabled = index === gallery.length-1;
+    for (const id of ['in','out','reset','original','play','sound']) $(id).disabled = true;
+    playbackControls();
+    let ready = false;
+    const loaded = () => {
+      if (token !== loadId || !dialog.open || ready || !dimensions().width || !dimensions().height) return;
+      ready = true; media.hidden = false; $('message').textContent = ''; reset();
+      for (const id of ['in','out','reset','original','play','sound']) $(id).disabled = false;
+      if (media === video) playVideo(token);
     };
-    photo.onerror = () => { if (currentLoad === loadId && dialog.open) $('message').textContent = 'This image could not be loaded. Try another photo or close the viewer.'; };
-    photo.alt = gallery[index].caption; photo.src = gallery[index].url;
+    const failed = () => {
+      if (token === loadId && dialog.open) $('message').textContent = 'This file could not be loaded. Try another or close the viewer.';
+    };
+    if (media === video) {
+      suspendOriginal(entry);
+      video.muted = true; video.loop = true;
+      video.onloadeddata = loaded; video.onerror = failed;
+      video.onresize = () => { if (token === loadId && dialog.open) { if (ready) render(); else loaded(); } };
+      video.setAttribute('aria-label',entry.caption); video.src = entry.url; video.load();
+    } else {
+      photo.onload = loaded; photo.onerror = failed;
+      photo.alt = entry.caption; photo.src = entry.url;
+    }
   }
   function navigate(delta) {
     const next = C.clamp(index + delta, 0, gallery.length - 1);
     if (next !== index) { index = next; load(); }
   }
   function zoom(factor, point = {x: 0, y: 0}) {
-    if (photo.hidden) return;
+    if (media.hidden) return;
     const next = C.zoomAt(view, view.scale * factor, point);
-    if (![next.scale * photo.naturalWidth, next.scale * photo.naturalHeight, next.scale * 100].every(Number.isFinite)) return;
+    const size = dimensions();
+    const values = [next.scale*size.width,next.scale*size.height,next.scale*100];
+    if (!values.every(value => Number.isFinite(value) && value > 0)) return;
     view = next; render();
   }
   stage.addEventListener('wheel', event => {
@@ -302,8 +410,8 @@
     zoom(Math.exp(-C.clamp(delta, -200, 200) * 0.002), {x: event.clientX - rect.left - rect.width / 2, y: event.clientY - rect.top - rect.height / 2});
   }, {passive: false});
   function pointOnPhoto(event) {
-    const rect = photo.getBoundingClientRect();
-    return !photo.hidden && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    const rect = media.getBoundingClientRect();
+    return !media.hidden && event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
   }
   stage.addEventListener('pointerdown', event => {
     didDrag = false;
@@ -327,7 +435,10 @@
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
   $('close').addEventListener('click', close); $('prev').addEventListener('click', () => navigate(-1)); $('next').addEventListener('click', () => navigate(1));
   $('in').addEventListener('click', () => zoom(1.25)); $('out').addEventListener('click', () => zoom(0.8)); $('reset').addEventListener('click', reset);
-  $('original').addEventListener('click', () => { if (!photo.hidden) { view = {scale: 1, x: 0, y: 0}; render(); } });
+  $('original').addEventListener('click', () => { if (!media.hidden) { view = {scale: 1, x: 0, y: 0}; render(); } });
+  video.addEventListener('play',playbackControls); video.addEventListener('pause',playbackControls); video.addEventListener('volumechange',playbackControls);
+  $('play').addEventListener('click',()=>{if (video.paused) playVideo(); else video.pause();});
+  $('sound').addEventListener('click',()=>{video.muted = !video.muted;});
   // Native modal dialog supplies focus containment and makes the underlying page inert.
   document.addEventListener('keydown', event => {
     if (!dialog.open || event.altKey || event.ctrlKey || event.metaKey) return;

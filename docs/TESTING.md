@@ -11,13 +11,13 @@ npm run build
 npm run test:tabs
 ```
 
-The viewer test uses real Firefox. It covers image filtering, focus, zoom under the mouse, pan, navigation, close controls, links, new page images, optional backgrounds, live settings, scroll restore, failed images, small screens, and settings save and reset. Storage is a test double in this test.
+The viewer test uses real Firefox. It covers image filtering, focus, zoom under the mouse, pan, navigation, close controls, links, new page images, optional backgrounds, live settings, scroll restore, failed images, small screens, and settings save and reset, including an editable pixel field. Storage is a test double in this test.
 
-The image checks cover small pictures, logos, tall comic strips, supported formats, GIF and PNG animation, sibling covers, pointer events off, shared covers, lazy images, reader page changes, layered backgrounds, and open components. Animation is checked from the actual viewer screenshot pixels.
+The image checks cover small pictures, logos, tall comic strips, supported formats, GIF and PNG animation, sibling covers, pointer events off, shared covers, lazy images, reader page changes, layered backgrounds, and open components. Animation is checked from the actual viewer screenshot pixels. They also check large logo detection, independent ad and thumbnail filters, the hover gap, WebM play and sound controls, video source children, small screen layout, and source playback restored on close.
 
-The zoom checks include the 100% floor, zoom beyond the old limit, and actual raster pixels at 32 times the photo's size.
+The zoom checks include values below 100%, zoom beyond the old limit, and actual raster pixels at 32 times the photo's size.
 
-The tab test uses the real extension and built ZIP. It opens two web tabs before installing IMG Hub. It checks those tabs, a new tab, a page reload, and an iframe. It also opens a small covered GIF through the closed viewer with real extension storage and checks a closed comic component. Firefox uses a fresh profile that is removed after the test.
+The tab test uses the real extension and built ZIP. It opens two web tabs before installing IMG Hub. It checks those tabs, a new tab, a page reload, and an iframe. It also opens a covered GIF through the closed viewer with real extension storage and checks a closed comic component. Changing screenshot pixels prove WebM playback in the installed extension. Firefox uses a fresh profile that is removed after the test.
 
 Helper unit checks run on Windows, Mac, and Linux in CI. They cover the two launch modes, first run tool setup, custom paths with spaces, Flatpak aliases, environment cleanup, and failures.
 
@@ -28,7 +28,7 @@ Before sharing a signed copy, do these desktop checks.
 3. Check the viewer in both tabs. Open another tab and check it too.
 4. Close the helper terminal. Firefox should stay open.
 5. Check the toolbar popup and website access controls.
-6. Try a comic reader with page arrows and a cover over the picture. Check a real GIF. Turn the page, then open the new picture.
+6. Try a comic reader with page arrows and a cover over the picture. Check a real GIF and a WebM clip. Try the play and sound controls. Turn the page, then open the new picture.
 7. Try a news page, a blog, a gallery, a shop, and a page that loads more as you scroll.
 8. Check a responsive photo and a photo that loads later.
 9. Try linked photos with direct clicks off and on. Check Ctrl and Shift clicks.

@@ -2,7 +2,7 @@
 
 # IMG Hub
 
-See photos up close. Use your mouse wheel to zoom in and out.
+See photos and clips up close. Use your mouse wheel to zoom in and out.
 
 ## Easy start
 
@@ -47,11 +47,13 @@ The app turns on in open web tabs and works in new tabs.
 
 ## Look at a photo
 
-Move your mouse over a photo. Click **View image**.
+Move your mouse over a photo. Click **View image** below it. At the edge of the screen, the button may sit above or beside it.
 
-GIFs keep moving. IMG Hub also finds small images, tall comic pages, page backgrounds, and photos under a page cover.
+GIFs and animated PNG files keep moving. WebM and other video clips that Firefox can play work too. Click **View clip**, then use **Play**, **Pause**, or **Sound on**. Clips start with sound off.
 
-Put your mouse over the spot you want to see. Scroll up to zoom in. Scroll down to zoom out. Zoom stops at 100% when you zoom out. You can keep zooming in to see the pixels. The spot under your mouse stays in place.
+IMG Hub also finds tall comic pages, page backgrounds, and photos under a page cover.
+
+Put your mouse over the spot you want to see. Scroll up to zoom in. Scroll down to zoom out. You can keep zooming out or zooming in to see the pixels. The spot under your mouse stays in place.
 
 Drag the photo to move it. Click **Reset** to go back to 100%. Click **1:1** to see its full size.
 
@@ -59,6 +61,10 @@ Use the arrows to see other photos. Press **Esc** or click **×** to close. You 
 
 ## Settings
 
-Click the IMG Hub icon in Firefox to change settings. **Show all images** starts on. It also works with settings saved by an older copy. Click **Save preferences** when you are done.
+Click the IMG Hub icon in Firefox to change settings. **Minimum width (pixels)** starts at 160. Lower it to include small pictures. A pixel is one small dot in a picture.
+
+**Hide logos**, **Hide ads**, and **Hide thumbnails** start on. These checks are guesses. Turn one off if it hides a picture you want. Click **Save preferences** when you are done.
+
+After loading an updated copy, reload your open web pages.
 
 Firefox blocks extensions on some pages, such as its settings pages. IMG Hub works on normal web pages where Firefox lets it run.

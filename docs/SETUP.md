@@ -2,7 +2,7 @@
 
 # IMG Hub
 
-Open photos, zoom in, and take a closer look.
+Open photos and clips. Zoom in and take a closer look.
 
 ## Use it in your Firefox
 
@@ -52,13 +52,15 @@ You do not need Node.js or a build step for this path. The app turns on in open 
 
 ## Use the mouse
 
-Move your mouse over a photo and click **View image**.
+Move your mouse over a photo and click **View image** below it. Near the edge of the screen, the button may sit above or beside it.
 
-GIFs and animated PNG images keep moving. Small pictures, tall comic pages, and photos under a page cover can open too.
+GIFs and animated PNG images keep moving. Tall comic pages and photos under a page cover can open too.
+
+For WebM and other clips that Firefox can play, click **View clip**. Clips start with sound off and play again when they end. Use **Play**, **Pause**, and **Sound on** to control them. Closing the viewer stops its clip.
 
 For a comic reader, close the viewer before you turn the page on the site. Then open the new picture.
 
-Point at the part you want to see. Scroll up to zoom in. Scroll down to zoom out. Zoom stops at 100% when you zoom out. You can keep zooming in to see the pixels. That part stays under your mouse in both cases.
+Point at the part you want to see. Scroll up to zoom in. Scroll down to zoom out. You can keep zooming out or zooming in to see the pixels. That part stays under your mouse in both cases.
 
 Hold the mouse button and drag to move the photo. You can still zoom at the spot under your mouse after you move the photo.
 
@@ -72,15 +74,19 @@ Click the IMG Hub icon in Firefox.
 
 **Direct click to open** lets you open a photo with a click. It starts off so links on web pages still work.
 
-**Hover controls** shows the **View image** button when your mouse is over a photo.
-
-**Show all images** starts on. It includes small pictures, tall pages, and page backgrounds. This also applies to settings from older copies.
-
-Turn it off if you want to use the two choices below.
+**Hover controls** shows a button outside the picture when your mouse is over it.
 
 **CSS background images** finds pictures used as page backgrounds.
 
-**Minimum image width** sets how wide a picture must be. It starts at 160 pixels. A pixel is one small dot in a picture.
+**Minimum width (pixels)** sets how wide a picture must be. It starts at 160 pixels. A pixel is one small dot in a picture. You can always edit this value. Lower it to include small pictures. It uses the full picture width when Firefox knows it. For backgrounds and clips that have not loaded yet, it uses the width on the page.
+
+**Hide logos** tries to skip logos by their names and page labels, even if they are large.
+
+**Hide ads** tries to skip pictures marked as ads.
+
+**Hide thumbnails** tries to skip small preview pictures.
+
+These three choices start on. They are guesses. Turn one off if it hides a picture you want. They only change what IMG Hub shows.
 
 Click **Save preferences** to save your choices. Click **Reset** to go back to the first settings.
 
@@ -111,11 +117,11 @@ Changing a ZIP file's name to XPI does not sign it. Mozilla has to sign it first
 
 **No button shows up on a web page:** Let IMG Hub work on the site if Firefox asks. Check that hover controls are on. Try reloading that page if it still does not show up.
 
-**A photo is missing:** Check that **Show all images** and **Hover controls** are on. Wait for the picture to load. Then move your mouse over it.
+**A photo is missing:** Check that **Hover controls** is on. Lower **Minimum width (pixels)**. Try turning off the hide choices. Wait for the picture to load, then move your mouse over it.
 
 **You loaded an updated copy:** Reload the web pages that were open so they use the new viewer.
 
-**A photo will not load:** The site may have blocked it, or the image link may have changed. Try another photo.
+**A photo or clip will not load:** The site may have blocked it, or the image link may have changed. Try another photo.
 
 **A new photo is not in the viewer:** Close the viewer and open it again.
 

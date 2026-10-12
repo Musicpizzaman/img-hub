@@ -4,13 +4,14 @@ const fs = require('node:fs/promises');
 const http = require('node:http');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const types={'.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.gif':'image/gif','.webp':'image/webp','.avif':'image/avif'};
+const types={'.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.gif':'image/gif','.webp':'image/webp','.avif':'image/avif','.webm':'video/webm'};
+const mediaNames=new Set(['animated.webm','animated-large.gif','large.png']);
 const names=new Set(['sample.png','sample.jpg','sample.webp','sample.avif','animated.gif','animated.png']);
 const server=http.createServer(async(request,response)=>{
   const pathname=new URL(request.url,'http://localhost').pathname;
   const name=path.basename(pathname);
   const file=pathname==='/tests/discovery.html' ? path.join(__dirname,'discovery.html')
-    : pathname.startsWith('/tests/images/') && names.has(name) ? path.join(__dirname,'images',name) : null;
+    : pathname.startsWith('/tests/images/') && (names.has(name)||mediaNames.has(name)) ? path.join(__dirname,'images',name) : null;
   if(!file){response.writeHead(404);response.end();return;}
   try{response.writeHead(200,{'Content-Type':types[path.extname(file)]});response.end(await fs.readFile(file));}
   catch{response.end();}
@@ -25,7 +26,7 @@ const server=http.createServer(async(request,response)=>{
     await context.addInitScript(()=>{
       const attach=Element.prototype.attachShadow;
       Element.prototype.attachShadow=function(options){return attach.call(this,{...options,mode:'open'})};
-      const listeners=[];let stored={};
+      const listeners=[];let stored={preferences:{minWidth:1,backgroundImages:true,hideLogos:false,hideAds:false,hideThumbnails:false}};
       window.browser={storage:{local:{
         get:async()=>({preferences:stored.preferences}),
         set:async value=>{const oldValue=stored.preferences;stored={...stored,...value};listeners.forEach(fn=>fn({preferences:{oldValue,newValue:stored.preferences}},'local'))}
@@ -127,13 +128,88 @@ const server=http.createServer(async(request,response)=>{
       assert.deepEqual([...colors].sort(),['0,68,255','255,34,0'],name+' keeps playing in the viewer');
       await close();
     }
+    // Filtering choices work independently, including large logos and ads.
+    const setPrefs = value => page.evaluate(value=>browser.storage.local.set({preferences:{minWidth:1,backgroundImages:true,hideLogos:true,hideAds:true,hideThumbnails:true,...value}}),value);
+    const noControl = async selector => {
+      await page.mouse.move(0,0); await page.locator(selector).scrollIntoViewIfNeeded();
+      const box=await page.locator(selector).boundingBox();
+      await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+      await page.waitForTimeout(50);
+      assert.equal(await ui('#hover').isVisible(),false,selector+' is filtered');
+    };
+    await setPrefs({});
+    for(const selector of ['#identity-picture','#promoted-picture','#marked-copy','#reduced-picture'])await noControl(selector);
+    await noControl('#promoted-picture');
+    await page.locator('#promoted-picture').evaluate(image=>image.parentElement.removeAttribute('data-ad-slot'));
+    await ui('#hover').waitFor({state:'visible'});
+    await page.locator('#promoted-picture').evaluate(image=>image.parentElement.setAttribute('data-ad-slot','reader'));
+    await ui('#hover').waitFor({state:'hidden'});
+    for(const [selector,setting] of [['#identity-picture','hideLogos'],['#promoted-picture','hideAds'],['#marked-copy','hideThumbnails'],['#reduced-picture','hideThumbnails']]){
+      await setPrefs({[setting]:false});await openAt(selector);await close();
+    }
+    await setPrefs({minWidth:128,hideLogos:false,hideAds:false,hideThumbnails:false});
+    await noControl('#format-sample-png');
+    await setPrefs({hideLogos:false,hideAds:false,hideThumbnails:false});
+
+    // The button is outside the image and remains reachable across the gap.
+    await page.locator('#format-sample-png').scrollIntoViewIfNeeded();
+    const imageBox=await page.locator('#format-sample-png').boundingBox();
+    await page.mouse.move(imageBox.x+imageBox.width/2,imageBox.y+imageBox.height/2);
+    await ui('#hover').waitFor({state:'visible'});
+    const hoverBox=await ui('#hover').boundingBox();
+    assert.ok(hoverBox.y>=imageBox.y+imageBox.height);
+    await page.mouse.move(hoverBox.x+25,imageBox.y+imageBox.height+4);
+    await page.waitForTimeout(80);
+    assert.equal(await ui('#hover').isVisible(),true);
+    await ui('#view').click();await ui('#photo').waitFor({state:'visible'});await close();
+
+    const openClip=async selector=>{
+      await page.mouse.move(0,0);await page.locator(selector).scrollIntoViewIfNeeded();
+      const box=await page.locator(selector).boundingBox();
+      await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+      await ui('#view').click();await ui('#video').waitFor({state:'visible'});
+      await page.waitForFunction(()=>{const video=document.querySelector('#img-hub-root').shadowRoot.querySelector('#video');return !video.paused&&video.currentTime>.02});
+    };
+    await page.locator('#webm-clip').evaluate(video=>video.play());
+    await openClip('#webm-clip');
+    assert.equal(await page.locator('#webm-clip').evaluate(video=>video.paused),true);
+    assert.deepEqual(await ui('#video').evaluate(video=>({width:video.videoWidth,height:video.videoHeight,muted:video.muted,loop:video.loop})),{width:192,height:128,muted:true,loop:true});
+    await ui('#play').click();assert.equal(await ui('#video').evaluate(video=>video.paused),true);
+    await ui('#play').click();
+    await ui('#sound').click();assert.equal(await ui('#video').evaluate(video=>video.muted),false);
+    const beforeClip=await ui('#video').boundingBox();
+    const stageClip=await ui('#stage').boundingBox();
+    const anchor={x:stageClip.x+stageClip.width/2+30,y:stageClip.y+stageClip.height/2+10};
+    await page.mouse.move(anchor.x,anchor.y);await page.mouse.wheel(0,200);
+    await page.waitForFunction(width=>document.querySelector('#img-hub-root').shadowRoot.querySelector('#video').getBoundingClientRect().width<width,beforeClip.width);
+    const shrunk=await ui('#video').boundingBox();
+    assert.ok(Math.abs((anchor.x-beforeClip.x)/beforeClip.width-(anchor.x-shrunk.x)/shrunk.width)<.001);
+    assert.equal(await ui('#out').isEnabled(),true);
+    await ui('#next').click();
+    await page.waitForFunction(()=>document.querySelector('#img-hub-root').shadowRoot.querySelector('#video').muted);
+    await close();
+    assert.equal(await ui('#video').getAttribute('src'),null);
+    assert.equal(await ui('#video').evaluate(video=>video.paused),true);
+    await page.waitForFunction(()=>!document.querySelector('#webm-clip').paused);
+    await page.locator('#webm-clip').evaluate(video=>video.pause());
+
+    await openClip('#child-clip');await close();
+    await page.setViewportSize({width:390,height:844});
+    await openClip('#webm-clip');
+    const mobileStage=await ui('#stage').boundingBox(),mobileNav=await ui('nav').boundingBox();
+    assert.ok(mobileStage.y+mobileStage.height<=mobileNav.y,'Clip controls stay below the stage');
+    await close();await page.setViewportSize({width:1280,height:900});
+    await setPrefs({directClick:true});
+    await page.locator('#native-clip').click({position:{x:100,y:80}});
+    assert.equal(await ui('dialog').isVisible(),false,'Native video controls keep their click');
+
     await page.evaluate(()=>browser.storage.local.set({preferences:{directClick:true}}));
     const turns=await page.evaluate(()=>window.pageTurns);
     await page.locator('#pager-next').click();
     assert.equal(await page.evaluate(()=>window.pageTurns),turns+1);
     assert.equal(await ui('dialog').isVisible(),false);
     assert.deepEqual(errors,[]);
-    console.log('Firefox image checks passed: small images, logos, tall comics, image formats, GIF and APNG animation, covers, page turns, backgrounds and components.');
+    console.log('Firefox image checks passed: small images, logos, tall comics, image formats, GIF and APNG animation, covers, page turns, backgrounds components, editable pixel filters, WebM playback, media cleanup and free zoom.');
   }finally{
     if(browser)await browser.close();
     await new Promise(resolve=>server.close(resolve));

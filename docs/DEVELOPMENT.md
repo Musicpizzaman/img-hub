@@ -24,19 +24,25 @@ After a source change, click Reload next to IMG Hub in about:debugging. Then rel
 
 ## Viewer
 
-Photo discovery checks img elements and accessible component roots. Each root watches changes and image load events, including a reader replacing the source under an unchanged cover. Discovery uses idle chunks of 150 elements. Removed images and component observers are pruned.
+Media discovery checks img and video elements and accessible component roots. Each root watches changes, image load events, and video metadata events, including a reader replacing the source under an unchanged cover. Discovery uses idle chunks of 150 elements. Removed media and component observers are pruned.
 
 Hover uses the browser hit layers under the pointer, including sibling covers. An IntersectionObserver keeps a set of candidates in the viewport for images with pointer events off. Pointer moves are handled once per animation frame. The entire page image list is not scanned on each move. Native buttons and form controls keep their own clicks. Firefox's [extension access to closed roots](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/dom/openOrClosedShadowRoot) also allows discovery of closed page components. Native form and media widget roots are skipped.
 
-Background URL parsing handles multiple layers, gradients before an image, and CSS escapes. Each source can join the gallery. Responsive img elements use currentSrc. The viewer uses native image URLs, so animated GIF and PNG files retain their animation.
+Background URL parsing handles multiple layers, gradients before an image, and CSS escapes. Each source can join the gallery. Responsive img and video elements use currentSrc. Video source children are supported too. The viewer uses native image and video URLs, so GIF and PNG animation and supported WebM playback remain live. Streams attached through srcObject do not use this URL path.
 
-The native modal dialog holds focus and page input. A closed Shadow DOM keeps its styles separate. Captions use textContent. Source URLs must use approved image protocols.
+A shared transform uses the active image or video dimensions. Clips start muted and loop, with separate play and sound controls. Closing or changing media clears handlers, pauses the viewer video, and removes its source. A load token rejects stale callbacks. Playing source clips visited by the viewer are paused and restored on close if still connected with the same source.
 
-Wheel zoom keeps the point under the mouse in place. Its minimum is 100% of the photo's pixel size. There is no preset maximum. Invalid numbers are rejected so the image stays usable. Above 100%, pixelated rendering shows each source pixel clearly.
+Hover controls sit below the selected media with a pointer corridor across the gap. At viewport edges they can sit above or beside it. They are never clamped over the selected media.
 
-Default settings turn on hover controls and Show all images. The new allImages field defaults to true when it is absent from older saved settings. This mode includes page backgrounds and skips the optional width limit. Names such as logo and icon and very tall or wide shapes are no longer rejected. Hidden, disconnected, and unloaded images remain outside the gallery.
+The native modal dialog holds focus and page input. A closed Shadow DOM keeps its styles separate. Captions use textContent. Source URLs must use approved media protocols.
 
-When Show all images is off, the saved minimum width and background choice apply. Direct clicks stay off by default to preserve page links. The optional width starts at 160 pixels.
+Wheel zoom keeps the point under the mouse in place. There is no preset minimum or maximum. Reset and 1:1 return to 100%. Invalid numbers are rejected so the image stays usable. Above 100%, pixelated rendering shows each source pixel clearly.
+
+Default settings turn on hover controls, page backgrounds, and three independent filters for likely logos, ads, and thumbnails. Direct clicks stay off to preserve page links. The editable minimum width starts at 160 pixels and accepts whole values from 1 to 1000000. It always applies. When known, native media width is used rather than the rendered CSS width. Backgrounds and unloaded videos use page dimensions. Hidden, disconnected, and unloaded images remain outside the gallery.
+
+The old allImages preference is removed. Its effective background coverage is retained during preference loading.
+
+Filters use element names, labels, nearby structural classes, and URL paths. Query strings and data URL payloads are not used as names. Ad markers and ancestor clues also apply across component roots. Large linked files displayed as small previews can be treated as thumbnails. Each filter is a guess and can be disabled on its own.
 
 ## Firefox helper
 
@@ -50,13 +56,13 @@ The normal helper leaves browser security and profile settings alone. The [Firef
 
 ## Tests and limits
 
-The viewer tests use real Firefox with a storage test double and an open Shadow DOM test seam. They check image controls, preferences, pointer zoom, and raster pixel rendering. Image discovery tests add actual GIF and PNG frame changes, JPG, PNG, WebP, AVIF, SVG comic pages, sibling covers, pointer events off, shared covers, lazy images, reader page turns, layered backgrounds, and page components.
+The viewer tests use real Firefox with a storage test double and an open Shadow DOM test seam. They check image and clip controls, editable pixel preferences, independent filters, pointer zoom, and raster pixel rendering. Image discovery tests add actual GIF and PNG frame changes, JPG, PNG, WebP, AVIF, SVG comic pages, sibling covers, pointer events off, shared covers, lazy images, reader page turns, layered backgrounds, and page components.
 
-The tab test installs the built ZIP into a disposable Firefox profile. It checks two tabs opened before installation, a new tab, a page reload, and an iframe using the actual extension APIs. It also opens a covered small GIF through the real closed viewer and checks an image inside a closed comic component. Debugging is enabled only in that disposable test profile.
+The tab test installs the built ZIP into a disposable Firefox profile. It checks two tabs opened before installation, a new tab, a page reload, and an iframe using the actual extension APIs. It also opens a covered GIF through the real closed viewer, checks an image inside a closed comic component, and proves WebM playback from changing screenshot pixels. Debugging is enabled only in that disposable test profile.
 
 Helper unit tests run in CI on Windows, Mac, and Linux. They check discovery, launch arguments, tool setup, and failures. A desktop check of an already running Firefox is still needed on each system before a public release. See [the test guide](TESTING.md).
 
-Detection uses accessible image elements and CSS image URLs in the [formats Firefox can show](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types). Readers that draw pages into a canvas, or show video clips need a separate capture or video path. Browser access restrictions still apply.
+Detection uses accessible image and video elements and CSS image URLs in the [formats Firefox can show](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types). Readers that draw pages into a canvas need a separate capture path. MediaSource streams and srcObject streams may not provide a reusable media URL. Browser access restrictions still apply.
 
 ## Distribution
 
