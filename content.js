@@ -38,33 +38,65 @@
   const stage = $('stage');
   const photo = $('photo');
   const hover = $('hover');
-  const candidates = new Set(document.querySelectorAll('img'));
+  const candidates = new Set();
+  const visible = new Set();
+  const scopes = new Map();
+  const pending = [];
+  let scanScheduled = false, hoverScheduled = false, pointer = null;
   let hovered = null, hoverTimer, pageFocus = null, gallery = [], index = 0, view = {scale: 1, x: 0, y: 0};
   let drag = null, didDrag = false, savedScroll = null, loadId = 0;
-
-  function sourceFor(element) {
-    if (!(element instanceof Element) || !element.isConnected || element === host) return null;
-    const rect = element.getBoundingClientRect();
-    if (!rect.width || !rect.height || getComputedStyle(element).visibility === 'hidden') return null;
-    const img = element instanceof HTMLImageElement;
-    if (!img && !prefs.backgroundImages) return null;
-    const metadata = `${element.id} ${typeof element.className === 'string' ? element.className : ''} ${element.getAttribute('alt') || ''} ${element.getAttribute('role') || ''}`;
-    if (!C.eligible({width: rect.width, height: rect.height, naturalWidth: img ? element.naturalWidth : rect.width, naturalHeight: img ? element.naturalHeight : rect.height, metadata}, prefs.minWidth)) return null;
-    let source;
-    if (img) source = element.currentSrc || element.src;
-    else {
-      const background = getComputedStyle(element).backgroundImage;
-      const match = /^url\(["']?(.*?)["']?\)$/.exec(background);
-      source = match?.[1];
+  const viewport = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) visible.add(entry.target);
+      else visible.delete(entry.target);
     }
-    const url = source && C.safeSource(source, document.baseURI);
-    return url ? {element, url, caption: element.getAttribute('alt') || element.getAttribute('aria-label') || 'Webpage image'} : null;
+    scheduleHover();
+  });
+  function addCandidate(element) {
+    if (candidates.has(element) || element === host) return;
+    candidates.add(element); viewport.observe(element);
   }
-  function findTarget(target) {
-    // Ancestors support photos with captions or transparent overlays.
-    for (let element = target, depth = 0; element instanceof Element && depth < 5; element = element.parentElement, depth++) {
+  function sourcesFor(element) {
+    if (!(element instanceof Element) || !element.isConnected || element === host || element.getRootNode() === shadow) return [];
+    if (!element.checkVisibility({opacityProperty: true, visibilityProperty: true})) return [];
+    const rect = element.getBoundingClientRect();
+    const img = element instanceof HTMLImageElement;
+    if (!img && !prefs.allImages && !prefs.backgroundImages) return [];
+    if (!C.eligible({width: rect.width, height: rect.height, naturalWidth: img ? element.naturalWidth : rect.width, naturalHeight: img ? element.naturalHeight : rect.height}, prefs.allImages ? 0 : prefs.minWidth)) return [];
+    const urls = img ? [C.safeSource(element.currentSrc || element.src, document.baseURI)].filter(Boolean)
+      : C.backgroundSources(getComputedStyle(element).backgroundImage, document.baseURI);
+    const caption = element.getAttribute('alt') || element.getAttribute('aria-label') || 'Webpage image';
+    return urls.map(url => ({element, url, caption}));
+  }
+  function sourceFor(element) { return sourcesFor(element)[0] || null; }
+  function containsPoint(element, point) {
+    const rect = element.getBoundingClientRect();
+    return point.clientX >= rect.left && point.clientX < rect.right && point.clientY >= rect.top && point.clientY < rect.bottom;
+  }
+  function findTarget(point) {
+    if (!point || point.path.some(element => element instanceof Element && element.matches('button,input,select,textarea'))) return null;
+    const layers = [...new Set([...document.elementsFromPoint(point.clientX, point.clientY), ...point.path.filter(element => element instanceof Element && element.getRootNode() instanceof ShadowRoot)])].filter(element => element !== host);
+    // Hit testing reaches images below sibling covers. Only visible candidates
+    // are checked for images that opt out of pointer events.
+    for (const element of layers) {
+      if (!(element instanceof HTMLImageElement)) continue;
       const entry = sourceFor(element);
-      if (entry) { candidates.add(element); return entry; }
+      if (entry) { addCandidate(element); return entry; }
+    }
+    for (const element of [...visible].reverse()) {
+      if (!(element instanceof HTMLImageElement) || !containsPoint(element, point)) continue;
+      const entry = sourceFor(element);
+      if (entry) return entry;
+    }
+    for (const element of layers) {
+      if (element instanceof HTMLImageElement || !containsPoint(element, point)) continue;
+      const entry = sourceFor(element);
+      if (entry) { addCandidate(element); return entry; }
+    }
+    for (const element of [...visible].reverse()) {
+      if (element instanceof HTMLImageElement || !containsPoint(element, point)) continue;
+      const entry = sourceFor(element);
+      if (entry) return entry;
     }
     return null;
   }
@@ -73,88 +105,143 @@
     if (!hovered || !hovered.element.isConnected || dialog.open) { hideHover(); return; }
     const rect = hovered.element.getBoundingClientRect();
     if (rect.bottom <= 0 || rect.top >= innerHeight || rect.right <= 0 || rect.left >= innerWidth) { hideHover(); return; }
-    hover.style.left = `${C.clamp(rect.left + 12, 6, innerWidth - hover.offsetWidth - 6)}px`;
-    hover.style.top = `${C.clamp(rect.bottom - hover.offsetHeight - 10, 6, innerHeight - hover.offsetHeight - 6)}px`;
+    hover.style.left = C.clamp(rect.left + 12, 6, innerWidth - hover.offsetWidth - 6) + 'px';
+    hover.style.top = C.clamp(rect.bottom - hover.offsetHeight - 10, 6, innerHeight - hover.offsetHeight - 6) + 'px';
   }
-  document.addEventListener('pointerover', event => {
-    if (event.target === host || dialog.open || !prefs.hoverControls) return;
+  function updateHover() {
+    if (!pointer || dialog.open || !prefs.hoverControls) return;
+    const entry = findTarget(pointer);
     clearTimeout(hoverTimer);
-    const entry = findTarget(event.target);
     if (!entry) { hideHover(); return; }
-    pageFocus = document.activeElement;
+    if (!hovered) pageFocus = document.activeElement;
     hovered = entry; hover.hidden = false; positionHover();
-  }, true);
+  }
+  function scheduleHover() {
+    if (hoverScheduled || !pointer || dialog.open || !prefs.hoverControls) return;
+    hoverScheduled = true;
+    requestAnimationFrame(() => { hoverScheduled = false; updateHover(); });
+  }
+  function trackPointer(event) {
+    if (event.target === host || event.composedPath().includes(host)) { pointer = null; return; }
+    pointer = {clientX: event.clientX, clientY: event.clientY, path: event.composedPath()};
+    if (event.type === 'pointerover') updateHover();
+    else scheduleHover();
+  }
+  document.addEventListener('pointerover', trackPointer, true);
+  document.addEventListener('pointermove', trackPointer, true);
   document.addEventListener('pointerout', event => {
     if (dialog.open || event.relatedTarget === host || event.target === host) return;
+    if (!event.relatedTarget) pointer = null;
     hoverTimer = setTimeout(hideHover, 200);
   }, true);
   hover.addEventListener('pointerenter', () => clearTimeout(hoverTimer));
   hover.addEventListener('pointerleave', () => { hoverTimer = setTimeout(hideHover, 200); });
-  $('view').addEventListener('click', () => { if (hovered) open(hovered); });
+  $('view').addEventListener('click', () => {
+    // A reader may replace the source while the pointer stays on its cover.
+    const entries = hovered ? sourcesFor(hovered.element) : [];
+    const entry = entries.find(entry => entry.url === hovered.url) || entries[0];
+    if (entry) open(entry); else hideHover();
+  });
   document.addEventListener('click', event => {
     if (!prefs.directClick || dialog.open || event.target === host || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-    const entry = findTarget(event.target);
+    const path = event.composedPath();
+    if (path.includes(host) || path.some(element => element instanceof HTMLElement && element.isContentEditable)) return;
+    const entry = findTarget({clientX: event.clientX, clientY: event.clientY, path});
     if (!entry) return;
     event.preventDefault(); event.stopImmediatePropagation(); pageFocus = document.activeElement; open(entry);
   }, true);
 
-  // Background discovery runs in small idle chunks; mutations only scan affected subtrees.
-  const pending = [];
-  let scanScheduled = false;
-  function queueBackground(root) {
-    if (!prefs.backgroundImages || !(root instanceof Element) || root === host || host.contains(root)) return;
+  // Discover page backgrounds and open component roots in small idle chunks.
+  function queueDiscovery(root) {
+    if (!(root instanceof Element || root instanceof ShadowRoot) || root === host || !root.isConnected) return;
     pending.push({root, walker: document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT), started: false});
     scheduleScan();
   }
   function scheduleScan() {
     if (scanScheduled || !pending.length) return;
     scanScheduled = true;
-    (window.requestIdleCallback || (fn => setTimeout(fn, 30)))(scanBackground);
+    if (window.requestIdleCallback) window.requestIdleCallback(scanDiscovery);
+    else setTimeout(scanDiscovery, 30);
   }
-  function scanBackground() {
+  function scanDiscovery() {
     scanScheduled = false;
-    if (!prefs.backgroundImages) { pending.length = 0; return; }
     for (let count = 0; pending.length && count < 150; count++) {
       const task = pending[0];
       if (!task.root.isConnected) { pending.shift(); continue; }
       const element = task.started ? task.walker.nextNode() : task.root;
       task.started = true;
       if (!element) { pending.shift(); continue; }
-      if (element !== host && !(element instanceof HTMLImageElement) && getComputedStyle(element).backgroundImage.startsWith('url(')) candidates.add(element);
+      if (!(element instanceof Element) || element === host) continue;
+      if (element instanceof HTMLImageElement) addCandidate(element);
+      else if ((prefs.allImages || prefs.backgroundImages) && C.backgroundSources(getComputedStyle(element).backgroundImage, document.baseURI).length) addCandidate(element);
+      if (!element.matches('input,select,textarea,video,audio')) {
+        const component = element.shadowRoot || element.openOrClosedShadowRoot;
+        if (component) observeScope(component);
+      }
     }
     scheduleScan();
   }
-  queueBackground(document.body);
-  const observer = new MutationObserver(records => {
+  function imageLoaded(event) {
+    if (event.target instanceof HTMLImageElement && event.target.getRootNode() !== shadow) {
+      addCandidate(event.target); scheduleHover();
+    }
+  }
+  function mutations(records) {
     for (const record of records) {
       if (record.target === host) continue;
-      if (record.type === 'attributes') {
-        if (!(record.target instanceof HTMLImageElement)) queueBackground(record.target);
-      } else {
-        for (const node of record.addedNodes) {
-          if (!(node instanceof Element) || node === host) continue;
-          if (node.matches('img')) candidates.add(node);
-          for (const img of node.querySelectorAll('img')) candidates.add(img);
-          queueBackground(node);
-        }
+      if (record.type === 'attributes') queueDiscovery(record.target);
+      else for (const node of record.addedNodes) {
+        if (!(node instanceof Element) || node === host) continue;
+        if (node instanceof HTMLImageElement) addCandidate(node);
+        for (const img of node.querySelectorAll('img')) addCandidate(img);
+        queueDiscovery(node);
       }
     }
-    for (const element of candidates) if (!element.isConnected) candidates.delete(element);
+    for (const element of candidates) {
+      if (element.isConnected) continue;
+      candidates.delete(element); visible.delete(element); viewport.unobserve(element);
+    }
+    for (const [scope, observer] of scopes) {
+      if (!(scope instanceof ShadowRoot) || scope.host.isConnected) continue;
+      observer.disconnect(); scope.removeEventListener('load', imageLoaded, true); scopes.delete(scope);
+    }
     if (hovered && !sourceFor(hovered.element)) hideHover();
-  });
-  observer.observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'srcset', 'style', 'class']});
+    scheduleHover();
+  }
+  function observeScope(scope) {
+    if (scopes.has(scope) || scope === shadow) return;
+    const observer = new MutationObserver(mutations);
+    observer.observe(scope instanceof Document ? document.documentElement : scope, {subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'srcset', 'sizes', 'style', 'class', 'hidden', 'width', 'height', 'id']});
+    scopes.set(scope, observer); scope.addEventListener('load', imageLoaded, true);
+    for (const img of scope.querySelectorAll('img')) addCandidate(img);
+    queueDiscovery(scope instanceof Document ? document.body : scope);
+  }
+  observeScope(document);
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !changes.preferences) return;
-    const backgroundsEnabled = !prefs.backgroundImages && changes.preferences.newValue?.backgroundImages;
+    const hadBackgrounds = prefs.allImages || prefs.backgroundImages;
     prefs = C.preferences(changes.preferences.newValue);
-    hideHover(); if (backgroundsEnabled) queueBackground(document.body);
+    hideHover();
+    if (!hadBackgrounds && (prefs.allImages || prefs.backgroundImages)) {
+      for (const scope of scopes.keys()) queueDiscovery(scope instanceof Document ? document.body : scope);
+    }
+    scheduleHover();
   });
 
   function collect(selected) {
-    const entries = [...candidates].map(sourceFor).filter(Boolean);
-    entries.sort((a, b) => a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1);
-    const unique = entries.filter((entry, i, all) => all.findIndex(other => other.url === entry.url) === i);
-    if (!unique.some(entry => entry.url === selected.url)) unique.push(selected);
+    const entries = [...candidates].flatMap(sourcesFor);
+    entries.sort((a, b) => {
+      if (a.element === b.element) return 0;
+      const position = a.element.compareDocumentPosition(b.element);
+      if (position & Node.DOCUMENT_POSITION_DISCONNECTED) return 0;
+      return position & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1;
+    });
+    const seen = new Set();
+    const unique = entries.filter(entry => {
+      if (seen.has(entry.url)) return false;
+      seen.add(entry.url); return true;
+    });
+    if (!seen.has(selected.url)) unique.push(selected);
     return unique;
   }
   function open(entry) {

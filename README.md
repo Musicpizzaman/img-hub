@@ -49,6 +49,8 @@ The app turns on in open web tabs and works in new tabs.
 
 Move your mouse over a photo. Click **View image**.
 
+GIFs keep moving. IMG Hub also finds small images, tall comic pages, page backgrounds, and photos under a page cover.
+
 Put your mouse over the spot you want to see. Scroll up to zoom in. Scroll down to zoom out. Zoom stops at 100% when you zoom out. You can keep zooming in to see the pixels. The spot under your mouse stays in place.
 
 Drag the photo to move it. Click **Reset** to go back to 100%. Click **1:1** to see its full size.
@@ -57,6 +59,6 @@ Use the arrows to see other photos. Press **Esc** or click **×** to close. You 
 
 ## Settings
 
-Click the IMG Hub icon in Firefox to change settings. Click **Save preferences** when you are done.
+Click the IMG Hub icon in Firefox to change settings. **Show all images** starts on. It also works with settings saved by an older copy. Click **Save preferences** when you are done.
 
 Firefox blocks extensions on some pages, such as its settings pages. IMG Hub works on normal web pages where Firefox lets it run.

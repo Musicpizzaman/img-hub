@@ -54,6 +54,10 @@ You do not need Node.js or a build step for this path. The app turns on in open 
 
 Move your mouse over a photo and click **View image**.
 
+GIFs and animated PNG images keep moving. Small pictures, tall comic pages, and photos under a page cover can open too.
+
+For a comic reader, close the viewer before you turn the page on the site. Then open the new picture.
+
 Point at the part you want to see. Scroll up to zoom in. Scroll down to zoom out. Zoom stops at 100% when you zoom out. You can keep zooming in to see the pixels. That part stays under your mouse in both cases.
 
 Hold the mouse button and drag to move the photo. You can still zoom at the spot under your mouse after you move the photo.
@@ -70,9 +74,13 @@ Click the IMG Hub icon in Firefox.
 
 **Hover controls** shows the **View image** button when your mouse is over a photo.
 
-**CSS background images** lets the app find photos used as page backgrounds. It starts off.
+**Show all images** starts on. It includes small pictures, tall pages, and page backgrounds. This also applies to settings from older copies.
 
-**Minimum image width** tells the app how wide a photo must be. It starts at 160 pixels. A pixel is one small dot in a picture.
+Turn it off if you want to use the two choices below.
+
+**CSS background images** finds pictures used as page backgrounds.
+
+**Minimum image width** sets how wide a picture must be. It starts at 160 pixels. A pixel is one small dot in a picture.
 
 Click **Save preferences** to save your choices. Click **Reset** to go back to the first settings.
 
@@ -103,7 +111,9 @@ Changing a ZIP file's name to XPI does not sign it. Mozilla has to sign it first
 
 **No button shows up on a web page:** Let IMG Hub work on the site if Firefox asks. Check that hover controls are on. Try reloading that page if it still does not show up.
 
-**A photo is missing:** It may be too small. Try a lower image width in settings. For a page background, turn on CSS background images.
+**A photo is missing:** Check that **Show all images** and **Hover controls** are on. Wait for the picture to load. Then move your mouse over it.
+
+**You loaded an updated copy:** Reload the web pages that were open so they use the new viewer.
 
 **A photo will not load:** The site may have blocked it, or the image link may have changed. Try another photo.
 

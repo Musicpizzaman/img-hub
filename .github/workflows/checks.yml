@@ -16,6 +16,7 @@ jobs:
       - run: npm run lint
       - run: npx playwright install --with-deps firefox
       - run: npm run test:browser
+      - run: npm run test:images
       - run: npm run build
       - run: npm run test:tabs
       - uses: actions/upload-artifact@v4

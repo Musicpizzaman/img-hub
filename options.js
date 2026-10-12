@@ -8,7 +8,13 @@
   function fill(value) {
     const prefs = IMGHubCore.preferences(value);
     for (const key of keys) controls[key][key === 'minWidth' ? 'value' : 'checked'] = prefs[key];
+    updateControls();
   }
+  function updateControls() {
+    controls.backgroundImages.disabled = controls.allImages.checked;
+    controls.minWidth.disabled = controls.allImages.checked;
+  }
+  controls.allImages.addEventListener('change', updateControls);
   async function save(value) {
     buttons.forEach(button => button.disabled = true);
     try {

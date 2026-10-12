@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>IMG Hub image cases</title>
+<style>
+body{margin:0;padding:30px;font:16px system-ui;background:#fafafa}
+section{margin:24px 0;display:flex;gap:24px;align-items:start}
+.box{position:relative;width:300px;height:200px}
+.box img{width:100%;height:100%;object-fit:contain}
+.cover{position:absolute;inset:0;background:rgba(255,255,255,.05)}
+#no-pointer{pointer-events:none}
+#comic{width:80px;height:500px}
+#layered{width:300px;height:200px;background:linear-gradient(transparent,transparent),url('/tests/images/sample.webp?layer=top'),url('/tests/images/sample.png?layer=bottom');background-size:cover}
+#pager-next{position:absolute;right:0;top:60px;z-index:1}
+[hidden]{display:none}
+</style></head>
+<body>
+<section id="formats"></section>
+<section><img id="site-logo" src="/tests/images/sample.png" width="32" height="32" alt="Site logo">
+<img id="comic" alt="Tall comic panel">
+<img id="hidden-image" hidden src="/tests/images/sample.png"></section>
+<section><div class="box"><img id="covered" src="/tests/images/sample.webp" alt="Covered photo"><div class="cover" id="cover"></div></div>
+<div class="box"><img id="no-pointer" src="/tests/images/sample.jpg" alt="Photo with pointer events off"><div class="cover" id="pointer-cover"></div></div></section>
+<section><div id="layered" aria-label="Layered page background"></div></section>
+<section><div class="box"><img id="pager-image" src="/tests/images/sample.png" alt="Current comic page"><div class="cover" id="pager-cover"></div><button id="pager-next">Next page</button></div></section>
+<section><div class="box"><img src="/tests/images/sample.png" alt="Left panel" style="position:absolute;left:0;width:50%"><img src="/tests/images/sample.jpg" alt="Right panel" style="position:absolute;right:0;width:50%"><div class="cover" id="split-cover"></div></div><div class="box" id="lazy-box"><div class="cover" id="lazy-cover"></div></div></section>
+<section id="component"></section>
+<script>
+const names=['sample.png','sample.jpg','sample.webp','sample.avif','animated.gif','animated.png'];
+for(const name of names){
+ const image=new Image();image.id='format-'+name.replaceAll('.','-');image.src='/tests/images/'+name;image.alt=name;document.querySelector('#formats').append(image);
+}
+document.querySelector('#comic').src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="1200"><rect width="96" height="1200" fill="orange"/><path d="M0 600H96" stroke="blue" stroke-width="20"/></svg>');
+document.querySelector('#cover').addEventListener('pointerover',event=>event.stopPropagation());
+document.querySelector('#cover').addEventListener('pointermove',event=>event.stopPropagation());
+window.pageTurns=0;
+document.querySelector('#pager-next').onclick=()=>{window.pageTurns++;document.querySelector('#pager-image').src='/tests/images/sample.jpg'};
+const component=document.querySelector('#component');
+const shadow=component.attachShadow({mode:'open'});
+shadow.innerHTML='<img id="component-image" src="/tests/images/sample.webp" width="150" height="100" alt="Component photo">';
+</script></body></html>

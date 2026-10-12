@@ -25,7 +25,7 @@ const server = http.createServer((req, res) => {
       const attach = Element.prototype.attachShadow;
       Element.prototype.attachShadow = function(options) {return attach.call(this, {...options, mode:'open'});};
       const listeners = [];
-      let stored = {};
+      let stored = {preferences:{allImages:false,backgroundImages:false}};
       window.browser = {storage:{local:{
         get: async () => ({preferences:stored.preferences}),
         set: async value => {const oldValue=stored.preferences; stored={...stored,...value}; listeners.forEach(fn=>fn({preferences:{oldValue,newValue:stored.preferences}},'local'));}
@@ -60,7 +60,7 @@ const server = http.createServer((req, res) => {
     await page.locator('#small').hover();
     assert.equal(await ui('#hover').isVisible(), false);
     await page.locator('#logo').hover();
-    assert.equal(await ui('#hover').isVisible(), false);
+    assert.equal(await ui('#hover').isVisible(), true);
     await page.locator('#focus').focus();
     await openFirst();
     assert.equal(await ui('#count').innerText(),'1 / 2');
@@ -119,12 +119,12 @@ const server = http.createServer((req, res) => {
     assert.equal(await ui('#count').innerText(),'1 / 3');
     await ui('#close').click();
     // Live preferences enable direct activation and backgrounds.
-    await page.evaluate(()=>browser.storage.local.set({preferences:{directClick:true,hoverControls:false,backgroundImages:true,minWidth:160}}));
+    await page.evaluate(()=>browser.storage.local.set({preferences:{allImages:false,directClick:true,hoverControls:false,backgroundImages:true,minWidth:160}}));
     await page.locator('#background').click({position:{x:200,y:100}});
     await ui('#photo').waitFor({state:'visible'});
     assert.equal(await ui('#caption').innerText(),'Background landscape');
     await ui('#close').click();
-    await page.evaluate(()=>browser.storage.local.set({preferences:{directClick:false,hoverControls:true,backgroundImages:false,minWidth:160}}));
+    await page.evaluate(()=>browser.storage.local.set({preferences:{allImages:false,directClick:false,hoverControls:true,backgroundImages:false,minWidth:160}}));
     // Outside click closes and restores page scroll and pre-existing inline styles.
     await page.evaluate(()=>{document.documentElement.style.setProperty('overflow','auto','important');window.scrollTo(0,120)});
     const scroll = await page.evaluate(()=>scrollY);
@@ -214,6 +214,12 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.evaluate(async()=> (await browser.storage.local.get()).preferences.directClick),true);
     await page.getByRole('button',{name:'Reset',exact:true}).click();
     assert.equal(await page.getByLabel('Direct click to open').isChecked(),false);
+    assert.equal(await page.locator('#allImages').isChecked(),true);
+    assert.equal(await page.locator('#minWidth').isDisabled(),true);
+    assert.equal(await page.locator('#backgroundImages').isDisabled(),true);
+    await page.locator('#allImages').uncheck();
+    assert.equal(await page.locator('#minWidth').isDisabled(),false);
+    await page.locator('#allImages').check();
     await page.setViewportSize({width:780,height:780});
     await page.screenshot({path:path.join(root,'test-results/preferences.png')});
     assert.deepEqual(errors,[]);

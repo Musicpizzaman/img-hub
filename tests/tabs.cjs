@@ -20,6 +20,7 @@ async function unusedPort() {
 
 const fixtures = new Map([
   ['/tests/fixture.html', ['fixture.html', 'text/html']],
+  ['/tests/images/animated.gif', ['images/animated.gif', 'image/gif']],
   ['/tests/landscape.svg', ['landscape.svg', 'image/svg+xml']],
   ['/tests/landscape-2.svg', ['landscape-2.svg', 'image/svg+xml']],
   ['/tests/landscape-3.svg', ['landscape-3.svg', 'image/svg+xml']]
@@ -88,7 +89,50 @@ const server = http.createServer(async (request, response) => {
     const frame = await frameHandle.asElement().contentFrame();
     assert.ok(frame);
     await assertActive(frame);
-    console.log('Firefox extension check passed for two existing tabs, a new tab, a page reload, and an iframe.');
+    await first.bringToFront();
+    // Use the real closed UI and extension storage with a small GIF below a cover.
+    await first.locator('#first').evaluate(async image => {
+      image.src='/tests/images/animated.gif'; await image.decode();
+      const rect=image.getBoundingClientRect();
+      const cover=document.createElement('div');cover.id='test-cover';
+      cover.style.cssText='position:fixed;z-index:100;background:#fff1;left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px';
+      document.body.append(cover);
+    });
+    const imageBox=await first.locator('#first').boundingBox();
+    const buttonPoint={x:imageBox.x+55,y:imageBox.y+imageBox.height-30};
+    await first.mouse.move(imageBox.x+200,imageBox.y+100);
+    await first.waitForFunction(point=>document.elementFromPoint(point.x,point.y)?.id==='img-hub-root',buttonPoint);
+    await first.mouse.click(buttonPoint.x,buttonPoint.y);
+    await first.waitForFunction(()=>document.documentElement.style.overflow==='hidden');
+    await first.keyboard.press('Escape');
+    await first.waitForFunction(()=>document.documentElement.style.overflow==='');
+    await first.mouse.move(imageBox.x+200,imageBox.y+100);
+    await first.waitForFunction(point=>document.elementFromPoint(point.x,point.y)?.id==='img-hub-root',buttonPoint);
+    await first.mouse.click(buttonPoint.x,buttonPoint.y);
+    await first.waitForFunction(()=>document.documentElement.style.overflow==='hidden');
+    await first.mouse.click(first.viewportSize().width-47,37);
+    await first.waitForFunction(()=>document.documentElement.style.overflow==='');
+
+    // Firefox exposes closed page roots to extensions, without opening them to the page.
+    await second.bringToFront();
+    const closedImage=await second.evaluate(async()=>{
+      const component=document.createElement('div');component.id='closed-comic';
+      component.style.cssText='position:fixed;left:500px;top:10px;width:96px;height:64px;z-index:100';
+      document.body.append(component);
+      const root=component.attachShadow({mode:'closed'});
+      const image=new Image();image.src='/tests/images/animated.gif';
+      root.append(image);await image.decode();
+      return image.getBoundingClientRect().toJSON();
+    });
+    assert.equal(await second.locator('#closed-comic').evaluate(element=>element.shadowRoot),null);
+    const closedButton={x:closedImage.x+40,y:closedImage.y+closedImage.height-30};
+    await second.mouse.move(closedImage.x+48,closedImage.y+20);
+    await second.waitForFunction(point=>document.elementFromPoint(point.x,point.y)?.id==='img-hub-root',closedButton);
+    await second.mouse.click(closedButton.x,closedButton.y);
+    await second.waitForFunction(()=>document.documentElement.style.overflow==='hidden');
+    await second.keyboard.press('Escape');
+    await second.waitForFunction(()=>document.documentElement.style.overflow==='');
+    console.log('Firefox extension check passed for two existing tabs, a new tab, a page reload, an iframe, a covered small GIF, and a closed comic component.');
   } finally {
     remote?.disconnect();
     if (context) await context.close();
