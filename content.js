@@ -27,7 +27,7 @@
       <nav aria-label="Image controls">
         <button id="prev" aria-label="Previous image" title="Previous (←)">←</button><span id="count"></span><button id="next" aria-label="Next image" title="Next (→)">→</button>
         <button id="out" aria-label="Zoom out" title="Zoom out (−)">−</button><output id="zoom" aria-label="Magnification">100%</output><button id="in" aria-label="Zoom in" title="Zoom in (+)">+</button>
-        <button id="fit" title="Fit to screen (F)">Fit</button><button id="original" title="Original size (0)">1:1</button>
+        <button id="reset" title="Reset view (F)">Reset</button><button id="original" title="Original size (0)">1:1</button>
       </nav><div id="hint">Wheel to zoom · Drag to pan · Arrow keys to browse · Esc to close</div>
     </dialog>`;
   document.documentElement.append(host);
@@ -174,22 +174,24 @@
   }
   function render() {
     photo.style.transform = `translate(${view.x - photo.naturalWidth * view.scale / 2}px, ${view.y - photo.naturalHeight * view.scale / 2}px) scale(${view.scale})`;
+    photo.style.imageRendering = view.scale > 1 ? 'pixelated' : 'auto';
+    $('out').disabled = view.scale <= 1;
     $('zoom').value = `${Math.round(view.scale * 100)}%`;
   }
-  function fit() {
+  function reset() {
     if (!photo.naturalWidth || photo.hidden) return;
-    view = {scale: C.fitScale(photo.naturalWidth, photo.naturalHeight, stage.clientWidth, stage.clientHeight), x: 0, y: 0}; render();
+    view = {scale: 1, x: 0, y: 0}; render();
   }
   function load() {
     const currentLoad = ++loadId;
     stopDrag(); photo.hidden = true; $('message').textContent = 'Loading image…'; $('caption').textContent = gallery[index].caption;
     $('count').textContent = `${index + 1} / ${gallery.length}`;
     $('prev').disabled = index === 0; $('next').disabled = index === gallery.length - 1;
-    for (const id of ['in', 'out', 'fit', 'original']) $(id).disabled = true;
+    for (const id of ['in', 'out', 'reset', 'original']) $(id).disabled = true;
     photo.onload = () => {
       if (currentLoad !== loadId || !dialog.open) return;
-      photo.hidden = false; $('message').textContent = ''; fit();
-      for (const id of ['in', 'out', 'fit', 'original']) $(id).disabled = false;
+      photo.hidden = false; $('message').textContent = ''; reset();
+      for (const id of ['in', 'reset', 'original']) $(id).disabled = false;
     };
     photo.onerror = () => { if (currentLoad === loadId && dialog.open) $('message').textContent = 'This image could not be loaded. Try another photo or close the viewer.'; };
     photo.alt = gallery[index].caption; photo.src = gallery[index].url;
@@ -200,7 +202,9 @@
   }
   function zoom(factor, point = {x: 0, y: 0}) {
     if (photo.hidden) return;
-    view = C.zoomAt(view, view.scale * factor, point); render();
+    const next = C.zoomAt(view, view.scale * factor, point);
+    if (![next.scale * photo.naturalWidth, next.scale * photo.naturalHeight, next.scale * 100].every(Number.isFinite)) return;
+    view = next; render();
   }
   stage.addEventListener('wheel', event => {
     event.preventDefault(); event.stopPropagation();
@@ -233,14 +237,14 @@
   dialog.addEventListener('click', event => { if (event.target === dialog) close(); });
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
   $('close').addEventListener('click', close); $('prev').addEventListener('click', () => navigate(-1)); $('next').addEventListener('click', () => navigate(1));
-  $('in').addEventListener('click', () => zoom(1.25)); $('out').addEventListener('click', () => zoom(0.8)); $('fit').addEventListener('click', fit);
+  $('in').addEventListener('click', () => zoom(1.25)); $('out').addEventListener('click', () => zoom(0.8)); $('reset').addEventListener('click', reset);
   $('original').addEventListener('click', () => { if (!photo.hidden) { view = {scale: 1, x: 0, y: 0}; render(); } });
   // Native modal dialog supplies focus containment and makes the underlying page inert.
   document.addEventListener('keydown', event => {
     if (!dialog.open || event.altKey || event.ctrlKey || event.metaKey) return;
-    const actions = {Escape: close, ArrowLeft: () => navigate(-1), ArrowRight: () => navigate(1), '+': () => zoom(1.25), '=': () => zoom(1.25), '-': () => zoom(0.8), f: fit, F: fit, '0': () => $('original').click()};
+    const actions = {Escape: close, ArrowLeft: () => navigate(-1), ArrowRight: () => navigate(1), '+': () => zoom(1.25), '=': () => zoom(1.25), '-': () => zoom(0.8), f: reset, F: reset, '0': () => $('original').click()};
     if (actions[event.key]) { event.preventDefault(); event.stopImmediatePropagation(); actions[event.key](); }
   }, true);
-  window.addEventListener('resize', () => { if (dialog.open) fit(); else positionHover(); });
+  window.addEventListener('resize', () => { if (dialog.open) reset(); else positionHover(); });
   window.addEventListener('scroll', () => { if (!hover.hidden) positionHover(); }, true);
 })();

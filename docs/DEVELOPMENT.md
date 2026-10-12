@@ -5,7 +5,7 @@ IMG Hub preserves the requested architecture: Firefox Manifest V3 → content sc
 | File | Purpose |
 | --- | --- |
 | manifest.json | Firefox metadata, website matches, permissions, toolbar popup, options |
-| core.js | Preferences, detection thresholds, safe image URLs, zoom and fit math |
+| core.js | Preferences, detection thresholds, safe image URLs, zoom math |
 | content.js | Photo discovery, hover toolbar, viewer, navigation and page interaction |
 | options.html / options.css / options.js | Locally saved preferences |
 | icons/ | Toolbar icons, exported at 16/32/48/128 pixels |
@@ -49,3 +49,11 @@ The package is unsigned. Submit it as unlisted through Mozilla before permanent 
 The extension package has no npm runtime dependencies. The current web-ext developer tool includes an upstream node-forge advisory through its Android adbkit dependency (npm reports three high-severity entries including dependents). This project does not use Android deployment. A shell-quote override removes the known command-quoting advisory. Recheck npm audit when updating tooling; npm audit --omit=dev currently reports zero vulnerabilities.
 
 The initial package was also installed successfully as a temporary add-on in an isolated headless Firefox profile using web-ext run. This smoke check verifies loading; manual toolbar and website permission checks remain listed in TESTING.md.
+
+## Firefox helper
+
+Run npm start to download missing tools, build the app, and open Firefox with IMG Hub loaded. It needs Node.js 22 or newer and Firefox 142 or newer. It uses a fresh test profile. The helper uses the locked local web-ext package. It does not use a saved web-ext config or WEB_EXT environment options.
+
+Set IMG_HUB_FIREFOX to a Firefox executable path or a Firefox alias if the default app is not found. For Linux Flatpak, set it to flatpak:org.mozilla.firefox. Set IMG_HUB_HEADLESS to 1 for a smoke test. These are optional environment settings. The helper uses Node to run npm, build, and launch commands with argument arrays and no shell.
+
+Mozilla documents default Firefox discovery, custom paths, and fresh profiles in its [web-ext reference](https://extensionworkshop.com/documentation/develop/web-ext-command-reference/). A lasting install still needs a signed XPI.

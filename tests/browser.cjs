@@ -62,7 +62,7 @@ const server = http.createServer((req, res) => {
     await ui('#original').click();
     assert.equal(await ui('#zoom').innerText(),'100%');
     assert.equal(await ui('#photo').evaluate(image=>image.getBoundingClientRect().width),1200);
-    await ui('#fit').click();
+    await ui('#reset').click();
     const stage = await ui('#stage').boundingBox();
     const px=stage.x+stage.width/2+100, py=stage.y+stage.height/2+70;
     const before = await ui('#photo').boundingBox();
@@ -93,7 +93,7 @@ const server = http.createServer((req, res) => {
       assert.ok(Math.abs((mouseX - previous.x) / previous.width - (mouseX - current.x) / current.width) < .001, 'Horizontal image point stays under mouse');
       assert.ok(Math.abs((mouseY - previous.y) / previous.height - (mouseY - current.y) / current.height) < .001, 'Vertical image point stays under mouse');
     }
-    await ui('#fit').click();
+    await ui('#reset').click();
     await page.screenshot({path:path.join(root,'test-results/viewer.png')});
     await page.keyboard.press('ArrowRight');
     assert.equal(await ui('#count').innerText(),'2 / 2');
@@ -121,11 +121,74 @@ const server = http.createServer((req, res) => {
     await page.evaluate(()=>{document.documentElement.style.setProperty('overflow','auto','important');window.scrollTo(0,120)});
     const scroll = await page.evaluate(()=>scrollY);
     await openFirst();
-    await ui('#fit').click();
+    await ui('#reset').click();
     await page.mouse.click(stage.x+4,stage.y+4);
     assert.equal(await ui('dialog').isVisible(),false);
     assert.equal(await page.evaluate(()=>scrollY),scroll);
     assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyPriority('overflow')),'important');
+
+    // Inspect actual PNG pixels at 32x, beyond the former 16x cap.
+    await page.locator('#first').evaluate(async image => {
+      image.src = '/docs/logo.png';
+      await image.decode();
+    });
+    await openFirst();
+    const rasterStart = await ui('#photo').boundingBox();
+    const natural = await ui('#photo').evaluate(image => ({width: image.naturalWidth, height: image.naturalHeight}));
+    assert.equal(rasterStart.width, natural.width);
+    assert.equal(await ui('#zoom').innerText(), '100%');
+    await page.mouse.move(stage.x + stage.width / 2, stage.y + stage.height / 2);
+    await page.mouse.wheel(0, 200);
+    await ui('#out').waitFor({state: 'visible'});
+    assert.equal(await ui('#out').isEnabled(), false);
+    assert.deepEqual(await ui('#photo').boundingBox(), rasterStart);
+
+    const edge = await ui('#photo').evaluate(image => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      for (let y = Math.floor(canvas.height * .4); y < canvas.height * .65; y++) {
+        for (let x = Math.floor(canvas.width * .3); x < canvas.width * .7; x++) {
+          const i = (y * canvas.width + x) * 4;
+          if (pixels[i + 3] < 253 || pixels[i + 7] < 253) continue;
+          const first = Array.from(pixels.slice(i, i + 3));
+          const second = Array.from(pixels.slice(i + 4, i + 7));
+          if (first.reduce((sum, color, channel) => sum + Math.abs(color - second[channel]), 0) > 80) return {x, y, first, second};
+        }
+      }
+      throw new Error('No solid raster edge found');
+    });
+    const anchorX = rasterStart.x + edge.x + .5, anchorY = rasterStart.y + edge.y + .5;
+    await page.mouse.move(anchorX, anchorY);
+    for (let step = 0; step < 9; step++) {
+      const previous = await ui('#photo').boundingBox();
+      const scale = previous.width / natural.width;
+      const delta = step < 8 ? -200 : -Math.log(32 / scale) / .002;
+      await page.mouse.wheel(0, delta);
+      await page.waitForFunction(width => document.querySelector('#img-hub-root').shadowRoot.querySelector('#photo').getBoundingClientRect().width > width + 1, previous.width);
+      const current = await ui('#photo').boundingBox();
+      assert.ok(Math.abs(current.x + (anchorX - previous.x) / previous.width * current.width - anchorX) < 1);
+      assert.ok(Math.abs(current.y + (anchorY - previous.y) / previous.height * current.height - anchorY) < 1);
+    }
+    assert.ok(Math.abs((await ui('#photo').boundingBox()).width / natural.width - 32) < .001);
+    assert.equal(await ui('#photo').evaluate(image => getComputedStyle(image).imageRendering), 'pixelated');
+    const clip = {x: Math.floor(anchorX) - 24, y: Math.floor(anchorY) - 24, width: 96, height: 48};
+    const pixelsShot = await page.screenshot({clip, path:path.join(root, 'test-results/raster-pixels.png')});
+    const sampled = await page.evaluate(async ({url, points}) => {
+      const image = new Image(); image.src = url; await image.decode();
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+      const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
+      return points.map(point => Array.from(context.getImageData(point.x, point.y, 1, 1).data).slice(0, 3));
+    }, {url:'data:image/png;base64,' + pixelsShot.toString('base64'), points:[16, 48].flatMap(offset => [-6, 0, 6].map(dx => ({x:Math.round(anchorX - clip.x + offset + dx),y:Math.round(anchorY - clip.y + 16)})))});
+    sampled.forEach((color, i) => color.forEach((channel, c) => assert.ok(Math.abs(channel - (i < 3 ? edge.first : edge.second)[c]) <= 3, JSON.stringify({expected: i < 3 ? edge.first : edge.second, actual: color, sample:i}))));
+    await ui('#reset').click();
+    assert.equal(await ui('#zoom').innerText(), '100%');
+    assert.equal((await ui('#photo').boundingBox()).width, natural.width);
+    assert.equal(await ui('#photo').evaluate(image => getComputedStyle(image).imageRendering), 'auto');
+    await ui('#close').click();
+
     // An image fetch failure remains dismissible.
     await openFirst();
     await ui('#photo').evaluate(img=>{img.src='/missing-selected-photo.png'});

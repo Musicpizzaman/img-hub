@@ -13,16 +13,21 @@ test('detection filters small, unloaded and decorative images', () => {
   assert.equal(C.eligible({width: 600, height: 400, metadata: 'ecological landscape'}, 160), true);
 });
 test('zoom preserves the image coordinate under the pointer', () => {
-  const view = {scale: .75, x: 80, y: -30}, point = {x: 140, y: 90};
-  const result = C.zoomAt(view, 1.5, point);
+  const view = {scale: 1.25, x: 80, y: -30}, point = {x: 140, y: 90};
+  const result = C.zoomAt(view, 2.5, point);
   assert.equal((point.x - view.x) / view.scale, (point.x - result.x) / result.scale);
   assert.equal((point.y - view.y) / view.scale, (point.y - result.y) / result.scale);
-  assert.deepEqual(C.zoomAt(result, .75, point), view);
-  assert.equal(C.zoomAt(view, 1000, point).scale, 16);
+  assert.deepEqual(C.zoomAt(result, 1.25, point), view);
+  assert.equal(C.zoomAt(view, 1000, point).scale, 1000);
 });
-test('fit scales large images without upscaling small photos', () => {
-  assert.equal(C.fitScale(1200, 800, 648, 448), .5);
-  assert.equal(C.fitScale(100, 100, 1000, 1000), 1);
+test('zoom has a 100% floor and no preset upper limit', () => {
+  const view = {scale: 1, x: 70, y: -30}, point = {x: 140, y: 90};
+  assert.deepEqual(C.zoomAt(view, .001, point), view);
+  assert.equal(C.zoomAt(view, 1000000, point).scale, 1000000);
+  assert.deepEqual(C.zoomAt(view, Infinity, point), view);
+  assert.deepEqual(C.zoomAt(view, NaN, point), view);
+  const extreme = {scale: 1, x: -1e308, y: 0};
+  assert.deepEqual(C.zoomAt(extreme, 10, {x: 1e308, y: 0}), extreme);
 });
 test('source rejects executable and privileged protocols', () => {
   assert.equal(C.safeSource('/image.jpg', 'https://example.com/article'), 'https://example.com/image.jpg');

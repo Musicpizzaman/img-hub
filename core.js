@@ -23,14 +23,14 @@
       !/(?:^|[\s_\-/])(icon|logo|avatar|emoji|badge|sprite|favicon)(?:$|[\s_\-/.\d])/i.test(metadata);
   }
   function zoomAt(view, nextScale, point) {
-    const scale = clamp(nextScale, 0.02, 16);
+    if (!Number.isFinite(nextScale)) return {...view};
+    const scale = Math.max(1, nextScale);
     const ratio = scale / view.scale;
-    return {scale, x: point.x - (point.x - view.x) * ratio, y: point.y - (point.y - view.y) * ratio};
+    const x = point.x - (point.x - view.x) * ratio;
+    const y = point.y - (point.y - view.y) * ratio;
+    return [scale, x, y].every(Number.isFinite) ? {scale, x, y} : {...view};
   }
-  function fitScale(width, height, viewportWidth, viewportHeight) {
-    return clamp(Math.min(1, (viewportWidth - 48) / width, (viewportHeight - 48) / height), 0.02, 16);
-  }
-  const api = Object.freeze({DEFAULTS, clamp, preferences, safeSource, eligible, zoomAt, fitScale});
+  const api = Object.freeze({DEFAULTS, clamp, preferences, safeSource, eligible, zoomAt});
   root.IMGHubCore = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(globalThis);

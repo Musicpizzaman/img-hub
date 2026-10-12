@@ -4,7 +4,23 @@
 
 Open photos, zoom in, and take a closer look.
 
-## Get started
+## Use the helper
+
+On Windows, Mac, or Linux, install Firefox 142 or newer and [Node.js](https://nodejs.org/) 22 or newer.
+
+Download this project. Open a terminal in its folder and run:
+
+```sh
+npm start
+```
+
+The helper downloads its tools on the first run. It then opens a fresh Firefox test window and loads IMG Hub for you.
+
+Keep the terminal open. Run this command each time you want that test window. Each new window starts with fresh settings.
+
+This helper is for computers. Phones need a different setup. A copy signed by Mozilla is still needed to keep IMG Hub in your usual Firefox window.
+
+## Get started by hand
 
 1. Sign in to GitHub and open this project.
 2. Click **Code**, then **Download ZIP**.
@@ -26,11 +42,11 @@ This copy is removed when you close Firefox. Add it again the next time you open
 
 Move your mouse over a photo and click **View image**.
 
-Point at the part you want to see. Scroll up to zoom in. Scroll down to zoom out. That part stays under your mouse in both cases.
+Point at the part you want to see. Scroll up to zoom in. Scroll down to zoom out. Zoom stops at 100% when you zoom out. You can keep zooming in to see the pixels. That part stays under your mouse in both cases.
 
 Hold the mouse button and drag to move the photo. You can still zoom at the spot under your mouse after you move the photo.
 
-Click **Fit** to see the whole photo. Click **1:1** to see it at full size.
+Click **Reset** to go back to 100%. Click **1:1** to see it at full size.
 
 Use the arrows to see the next or last photo. Press **Esc**, click **×**, or click outside the photo to close it.
 

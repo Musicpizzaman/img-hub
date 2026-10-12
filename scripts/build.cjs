@@ -9,5 +9,5 @@ for (const file of ['manifest.json', 'core.js', 'content.js', 'options.html', 'o
 fs.mkdirSync(path.join(staging, 'icons'), {recursive: true});
 for (const size of [16, 32, 48, 128]) fs.copyFileSync(path.join(root, `icons/icon-${size}.png`), path.join(staging, `icons/icon-${size}.png`));
 const executable = path.join(root, 'node_modules/web-ext/bin/web-ext.js');
-execFileSync(process.execPath, [executable, 'build', '--source-dir', staging, '--artifacts-dir', path.join(root, 'dist'), '--overwrite-dest'], {stdio: 'inherit'});
+execFileSync(process.execPath, [executable, 'build', '--source-dir', staging, '--artifacts-dir', path.join(root, 'dist'), '--overwrite-dest', '--no-config-discovery'], {stdio: 'inherit'});
 console.log(`Packaged IMG Hub ${manifest.version}. The ZIP is unsigned; use about:debugging for testing or Mozilla signing for permanent installation.`);

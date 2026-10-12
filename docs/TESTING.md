@@ -18,3 +18,5 @@ Before distributing a signed extension, manually load manifest.json into your de
 - Test the Mozilla-signed XPI separately once signing is complete.
 
 The initial build is not signed and has not been certified against every website.
+
+The helper has unit checks on Windows, Mac, and Linux in CI. They cover first run tool setup, custom paths with spaces, Flatpak aliases, isolated settings, and failures. Firefox tests also check the 100% floor, zoom beyond the old cap, and actual raster pixels at 32x.
