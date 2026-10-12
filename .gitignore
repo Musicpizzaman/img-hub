@@ -13,3 +13,10 @@ Thumbs.db
 local-review.diff
 /*.png
 scripts/prepare-assets.cjs
+
+assets/
+screenshots/
+docs/ASSETS.md
+docs/DESIGN.md
+scripts/export-icons.cjs
+IMG Hub Task Cards.md

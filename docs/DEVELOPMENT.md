@@ -9,7 +9,6 @@ IMG Hub preserves the requested architecture: Firefox Manifest V3 → content sc
 | content.js | Photo discovery, hover toolbar, viewer, navigation and page interaction |
 | options.html / options.css / options.js | Locally saved preferences |
 | icons/ | Toolbar icons, exported at 16/32/48/128 pixels |
-| assets/ | Transparent generated branding and guide illustrations |
 | scripts/build.cjs | Package allowlist; excludes development and documentation |
 | tests/ | Unit tests, Firefox interaction harness, local fixture artwork |
 
@@ -40,10 +39,6 @@ No telemetry is collected. IMG Hub only loads the selected source as an image; i
 ## Validation boundaries
 
 The Firefox interaction tests load the actual content and preference scripts into a real Firefox tab, replace closed Shadow DOM with open Shadow DOM for assertions, and mock WebExtension storage. They verify DOM behavior and math. They do not replace a full manual test of host permissions, actual Firefox extension storage, browser toolbar popup behavior, or Mozilla signing. `web-ext lint` validates the manifest and package. See [the manual test checklist](TESTING.md).
-
-## Artwork
-
-See [ASSETS.md](ASSETS.md) for prompts and generation provenance. Icon resizes preserve the generated logo's alpha. Source fixture landscapes are original SVG illustrations so tests need no third-party photo service.
 
 ## Future distribution
 

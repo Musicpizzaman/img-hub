@@ -7,12 +7,10 @@
     "test": "node --test tests/core.test.cjs",
     "test:browser": "node tests/browser.cjs",
     "lint": "web-ext lint --source-dir . --ignore-files docs/** screenshots/** tests/** scripts/** node_modules/** package*.json *.md .github/** icons/source.svg local-review.diff",
-    "build": "node scripts/build.cjs",
-    "icons": "node scripts/export-icons.cjs"
+    "build": "node scripts/build.cjs"
   },
   "devDependencies": {
     "playwright": "^1.64.0",
-    "sharp": "^0.35.5",
     "web-ext": "^10.7.0"
   },
   "overrides": {

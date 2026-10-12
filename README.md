@@ -1,75 +1,30 @@
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.png"><img src="assets/wordmark.png" width="560" alt="IMG Hub"></picture></p>
+# IMG Hub — install in Firefox
 
-<p align="center">A closer look at the photos you find on the web.</p>
+IMG Hub opens webpage photos in a viewer with mouse-wheel zoom and drag-to-pan.
 
-IMG Hub is a Firefox extension that opens webpage photographs in a dark viewer. Zoom toward your pointer, drag to pan, and browse the page's images without navigating away.
+## Temporary installation
 
-<p align="center"><img src="assets/viewer-illustration.png" width="540" alt="Illustration of the IMG Hub image viewer"></p>
+1. Download this repository using **Code → Download ZIP** and extract it. Because the repository is private, sign into GitHub first.
+2. In Firefox **142 or later**, enter `about:debugging#/runtime/this-firefox` in the address bar.
+3. Click **Load Temporary Add-on…**.
+4. Select `manifest.json` in the extracted project folder.
+5. Open or reload a normal webpage with large photos. Grant website access if Firefox asks.
+6. Hover a photo and click **View image**.
 
-## Get it into Firefox
+You do not need Node.js or a build step to install the source folder. Firefox removes temporary add-ons when it closes; load it again after restarting.
 
-1. Download this private repository using **Code → Download ZIP**, then extract it, or clone it:
-   ```sh
-   git clone https://github.com/Musicpizzaman/img-hub.git
-   ```
-2. In Firefox **142 or later**, open `about:debugging#/runtime/this-firefox`.
-3. Choose **Load Temporary Add-on…** and select `manifest.json` in the extracted project folder.
-4. Open or reload a normal webpage with large photos. Hover a photo and choose **View image**.
-5. Click the IMG Hub toolbar icon to adjust preferences.
+## Use it
 
-Temporary add-ons are removed when Firefox closes. For permanent installation, have Mozilla sign the extension as **unlisted**, then install its signed XPI. See the [illustrated setup guide](docs/SETUP.md) for the complete process and troubleshooting. Mozilla documents [temporary loading](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/) and [signing](https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/).
+Put your mouse over the part of the image you want to inspect, then scroll up to zoom in or down to zoom out. The image point under your mouse stays under your mouse in both directions, including after dragging the image.
 
-## What works in 0.1.0
+Drag to pan. **Fit** fits the image to the window; **1:1** shows its original size. Use the arrow buttons or arrow keys to browse. Press **Esc**, click **×**, or click outside the image to close.
 
-- Finds large `<img>` photos, including lazy-loaded and newly inserted images. Filters common icon, logo, avatar, and small-image patterns.
-- Shows a compact **View image** button. Direct-click opening is optional and off by default.
-- Provides a dark lightbox with previous/next navigation through unique image sources on the current page or frame.
-- Supports wheel zoom at the pointer, drag panning, fit-to-screen, original size, and magnification display.
-- Closes with **Esc**, the close button, or a click outside the displayed image. Restores the page's scroll position.
-- Saves preferences in Firefox locally and applies changes to open webpages. CSS background photos are optional and off by default.
+Click the IMG Hub toolbar icon to change preferences. Direct-click opening is off by default so website links keep working.
 
-| Key | Action |
-| --- | --- |
-| `Esc` | Close |
-| `←` / `→` | Previous / next image |
-| `+` / `−` | Zoom in / out |
-| `F` | Fit to screen |
-| `0` | Original size |
-| Mouse wheel / drag | Zoom at pointer / pan |
+## Keep it installed permanently
 
-## Working extension screenshots
+The source folder and build ZIP are unsigned. For installation that survives Firefox restarts, submit a package to Mozilla as an **unlisted** extension, download the signed XPI, and install it through **about:addons → gear menu → Install Add-on From File…**.
 
-These are captured from the implemented UI in automated Firefox tests, using original local landscape illustrations. The generated artwork above is a concept illustration.
+See the [complete installation guide](docs/SETUP.md) for packaging, signing, settings, and troubleshooting.
 
-![Working IMG Hub viewer](screenshots/viewer.png)
-
-![IMG Hub preferences](screenshots/preferences.png)
-
-## Build and develop
-
-The extension itself uses plain JavaScript, HTML, and CSS, with no backend or runtime libraries. Node.js 22 or later is needed only for development tooling.
-
-```sh
-npm ci
-npm test
-npm run lint
-npx playwright install firefox
-npm run test:browser
-npm run build
-```
-
-The installable source files sit at the repository root. Building creates `dist/img_hub-0.1.0.zip` and a clean `dist/extension/` folder; documentation, tests, references, and development tools are excluded. The ZIP is unsigned.
-
-See [development and architecture](docs/DEVELOPMENT.md), [manual compatibility checks](docs/TESTING.md), [privacy](docs/PRIVACY.md), and [asset provenance and prompts](docs/ASSETS.md).
-
-## Limits and permissions
-
-Firefox blocks extensions on internal pages such as `about:` pages, Mozilla Add-ons, and other restricted domains. IMG Hub targets HTTP and HTTPS pages; local file URLs are outside its scope. Firefox may ask you to grant website access in its extension menu. Reload already-open pages after loading the add-on.
-
-Detection is heuristic: it does not use AI to classify photographs. Galleries are collected when the viewer opens; close and reopen to include later arrivals. Background discovery runs in idle chunks and may need a moment. Each embedded frame has its own viewer and gallery. Images inside website Shadow DOM, canvas artwork, layered CSS backgrounds, and highly customized site widgets are not supported in this version.
-
-Website access lets the content script find images and display the viewer. The storage permission saves preferences. IMG Hub has no analytics, uploads, or account service. Viewing a photo uses its existing source URL and may make an ordinary image request to its website.
-
-## Design
-
-The cyan/violet image-frame identity comes from the supplied boards. Standalone transparent branding and documentation illustrations were recreated using the built-in ImageGen tool; the original boards are retained as [design references](docs/DESIGN.md). Source code is [MIT licensed](LICENSE); supplied reference artwork has no additional license assigned by this project.
+Firefox blocks extensions on internal pages and some restricted websites. IMG Hub works on normal HTTP/HTTPS webpages.

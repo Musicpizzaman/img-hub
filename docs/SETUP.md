@@ -1,6 +1,5 @@
 # IMG Hub: Firefox setup guide
 
-![Standalone Firefox setup illustration](../assets/setup-illustration.png)
 
 This guide takes you from the private GitHub repository to a temporary installation, then an optional signed installation that survives Firefox restarts.
 
@@ -32,9 +31,8 @@ Mozilla's [temporary installation instructions](https://extensionworkshop.com/do
 
 Hover a photograph and click **View image**. A dark viewer opens above the webpage.
 
-![Working viewer](../screenshots/viewer.png)
 
-Use your mouse wheel to zoom toward the pointer, and drag the image to pan. **Fit** returns it to the available viewport; **1:1** shows the image at its natural size. The percentage is relative to that natural size. Use the arrows to move through eligible images. **Esc**, **×**, or an empty area outside the image closes the viewer.
+Move your mouse over the image point you want to inspect. Scroll up to zoom in or down to zoom out: that same image point stays under your mouse, even after you have panned. Drag the image to pan. **Fit** returns it to the available viewport; **1:1** shows the image at its natural size. The percentage is relative to that natural size. Use the arrows to move through eligible images. **Esc**, **×**, or an empty area outside the image closes the viewer.
 
 Direct clicking is off initially so webpage image links remain usable. Modifier clicks such as Ctrl-click continue to follow normal browser behavior.
 
@@ -42,7 +40,6 @@ Direct clicking is off initially so webpage image links remain usable. Modifier 
 
 Click the IMG Hub icon in Firefox's extensions menu or toolbar. You can also open **Add-ons and themes → Extensions → IMG Hub → Preferences**.
 
-![Implemented preferences](../screenshots/preferences.png)
 
 - **Direct click to open:** opens eligible photos with a normal click.
 - **Hover controls:** shows the View image button.

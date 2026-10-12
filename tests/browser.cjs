@@ -4,6 +4,7 @@ const path = require('node:path');
 const http = require('node:http');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
+fs.mkdirSync(path.join(root, 'test-results'), {recursive: true});
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const file = path.resolve(root, '.' + decodeURIComponent(url.pathname));
@@ -74,8 +75,26 @@ const server = http.createServer((req, res) => {
     await page.mouse.down(); await page.mouse.move(px+70,py+35,{steps:5}); await page.mouse.up();
     const panAfter = await ui('#photo').boundingBox();
     assert.ok(Math.abs(panAfter.x-panBefore.x-70)<1);
+    // Both wheel directions preserve the mouse's image coordinate after panning,
+    // including when the mouse moves to a different part of the photo.
+    for (const [delta, offsetX, offsetY] of [[100, -180, -80], [-100, 220, 100]]) {
+      const mouseX = stage.x + stage.width / 2 + offsetX;
+      const mouseY = stage.y + stage.height / 2 + offsetY;
+      const previous = await ui('#photo').boundingBox();
+      assert.ok(mouseX > previous.x && mouseX < previous.x + previous.width);
+      assert.ok(mouseY > previous.y && mouseY < previous.y + previous.height);
+      await page.mouse.move(mouseX, mouseY);
+      await page.mouse.wheel(0, delta);
+      await page.waitForFunction(({width, delta}) => {
+        const current = document.querySelector('#img-hub-root').shadowRoot.querySelector('#photo').getBoundingClientRect().width;
+        return delta > 0 ? current < width - .5 : current > width + .5;
+      }, {width: previous.width, delta});
+      const current = await ui('#photo').boundingBox();
+      assert.ok(Math.abs((mouseX - previous.x) / previous.width - (mouseX - current.x) / current.width) < .001, 'Horizontal image point stays under mouse');
+      assert.ok(Math.abs((mouseY - previous.y) / previous.height - (mouseY - current.y) / current.height) < .001, 'Vertical image point stays under mouse');
+    }
     await ui('#fit').click();
-    await page.screenshot({path:path.join(root,'screenshots/viewer.png')});
+    await page.screenshot({path:path.join(root,'test-results/viewer.png')});
     await page.keyboard.press('ArrowRight');
     assert.equal(await ui('#count').innerText(),'2 / 2');
     await page.keyboard.press('Escape');
@@ -115,7 +134,7 @@ const server = http.createServer((req, res) => {
     await page.keyboard.press('Escape');
     await page.setViewportSize({width:390,height:844});
     await setup(); await openFirst();
-    await page.screenshot({path:path.join(root,'screenshots/viewer-narrow.png')});
+    await page.screenshot({path:path.join(root,'test-results/viewer-narrow.png')});
     await page.keyboard.press('Escape');
     await page.goto(base+'/options.html');
     await page.getByLabel('Direct click to open').check();
@@ -125,7 +144,7 @@ const server = http.createServer((req, res) => {
     await page.getByRole('button',{name:'Reset',exact:true}).click();
     assert.equal(await page.getByLabel('Direct click to open').isChecked(),false);
     await page.setViewportSize({width:780,height:780});
-    await page.screenshot({path:path.join(root,'screenshots/preferences.png')});
+    await page.screenshot({path:path.join(root,'test-results/preferences.png')});
     assert.deepEqual(errors,[]);
     console.log('Firefox browser checks passed: filtering, focus, zoom anchor, pan, navigation, close, links, dynamic images, backgrounds, live preferences, scroll, load errors, narrow layout, preference save/reset.');
   } finally {await browser.close();server.close();}
