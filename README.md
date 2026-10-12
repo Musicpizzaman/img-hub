@@ -1,30 +1,35 @@
-# IMG Hub — install in Firefox
+<p align="center"><img src="docs/logo.png" width="112" height="112" alt="IMG Hub logo"></p>
 
-IMG Hub opens webpage photos in a viewer with mouse-wheel zoom and drag-to-pan.
+# IMG Hub
 
-## Temporary installation
+See photos up close. Use your mouse wheel to zoom in and out.
 
-1. Download this repository using **Code → Download ZIP** and extract it. Because the repository is private, sign into GitHub first.
-2. In Firefox **142 or later**, enter `about:debugging#/runtime/this-firefox` in the address bar.
-3. Click **Load Temporary Add-on…**.
-4. Select `manifest.json` in the extracted project folder.
-5. Open or reload a normal webpage with large photos. Grant website access if Firefox asks.
-6. Hover a photo and click **View image**.
+## Start
 
-You do not need Node.js or a build step to install the source folder. Firefox removes temporary add-ons when it closes; load it again after restarting.
+1. Sign in to GitHub. Click **Code**, then **Download ZIP**.
+2. Open the ZIP file and copy the files into a folder.
+3. In Firefox 142 or newer, type `about:debugging` in the address bar.
+4. Click **This Firefox** on the left.
+5. Click the button to load a temporary extension.
+6. Choose `manifest.json` from the folder you saved.
+7. Open a web page with photos. If the page is already open, reload it.
 
-## Use it
+You do not need to build the app first.
 
-Put your mouse over the part of the image you want to inspect, then scroll up to zoom in or down to zoom out. The image point under your mouse stays under your mouse in both directions, including after dragging the image.
+Firefox removes this copy when you close the browser. Follow the same steps to add it again. See [more help](docs/SETUP.md) to learn how to keep it.
 
-Drag to pan. **Fit** fits the image to the window; **1:1** shows its original size. Use the arrow buttons or arrow keys to browse. Press **Esc**, click **×**, or click outside the image to close.
+## Look at a photo
 
-Click the IMG Hub toolbar icon to change preferences. Direct-click opening is off by default so website links keep working.
+Move your mouse over a photo. Click **View image**.
 
-## Keep it installed permanently
+Put your mouse over the spot you want to see. Scroll up to zoom in. Scroll down to zoom out. The spot under your mouse stays in place.
 
-The source folder and build ZIP are unsigned. For installation that survives Firefox restarts, submit a package to Mozilla as an **unlisted** extension, download the signed XPI, and install it through **about:addons → gear menu → Install Add-on From File…**.
+Drag the photo to move it. Click **Fit** to see the whole photo. Click **1:1** to see its full size.
 
-See the [complete installation guide](docs/SETUP.md) for packaging, signing, settings, and troubleshooting.
+Use the arrows to see other photos. Press **Esc** or click **×** to close. You can also click an empty spot outside the photo.
 
-Firefox blocks extensions on internal pages and some restricted websites. IMG Hub works on normal HTTP/HTTPS webpages.
+## Settings
+
+Click the IMG Hub icon in Firefox to change settings. Click **Save preferences** when you are done.
+
+Some Firefox pages block extensions. Try a normal web page if the app does not show up.

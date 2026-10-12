@@ -1,90 +1,89 @@
-# IMG Hub: Firefox setup guide
+<p align="center"><img src="logo.png" width="112" height="112" alt="IMG Hub logo"></p>
 
+# IMG Hub
 
-This guide takes you from the private GitHub repository to a temporary installation, then an optional signed installation that survives Firefox restarts.
+Open photos, zoom in, and take a closer look.
 
-## 1. Get the project
+## Get started
 
-Open [Musicpizzaman/img-hub](https://github.com/Musicpizzaman/img-hub). You must be signed into an account with access because the repository is private.
+1. Sign in to GitHub and open this project.
+2. Click **Code**, then **Download ZIP**.
+3. Open the ZIP file. Copy the files into a folder.
+4. Use Firefox 142 or newer.
+5. Type `about:debugging` in the address bar.
+6. Click **This Firefox** on the left.
+7. Click the button to load a temporary extension.
+8. Choose `manifest.json` from your saved folder.
+9. Check that **IMG Hub** is in the list.
 
-Choose **Code → Download ZIP**, save it, and extract it. Do not select a file inside the unextracted ZIP when loading the extension. Alternatively:
+You can use the app right away. You do not need Node.js or a build step.
 
-```sh
-git clone https://github.com/Musicpizzaman/img-hub.git
-cd img-hub
-```
+Open a web page with large photos. Reload the page if it was already open. If Firefox asks to let IMG Hub work on the site, allow it.
 
-Locate `manifest.json`. The same directory should contain `content.js`, `core.js`, the options files, and `icons/`. You do not need Node.js, npm, or a build step to load this source folder.
+This copy is removed when you close Firefox. Add it again the next time you open Firefox.
 
-## 2. Load it temporarily
+## Use the mouse
 
-1. Use desktop Firefox **142 or later**.
-2. Enter `about:debugging#/runtime/this-firefox` in the address bar.
-3. Click **Load Temporary Add-on…**.
-4. Select this project's `manifest.json`.
-5. Confirm **IMG Hub** appears under Temporary Extensions.
-6. Visit or reload an ordinary HTTP/HTTPS page with large photographs. If Firefox asks for website access, grant access for the site you want to use.
+Move your mouse over a photo and click **View image**.
 
-Mozilla's [temporary installation instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/) describe the same workflow. Firefox removes temporary add-ons when it closes; repeat these steps after restarting.
+Point at the part you want to see. Scroll up to zoom in. Scroll down to zoom out. That part stays under your mouse in both cases.
 
-## 3. Use the viewer
+Hold the mouse button and drag to move the photo. You can still zoom at the spot under your mouse after you move the photo.
 
-Hover a photograph and click **View image**. A dark viewer opens above the webpage.
+Click **Fit** to see the whole photo. Click **1:1** to see it at full size.
 
+Use the arrows to see the next or last photo. Press **Esc**, click **×**, or click outside the photo to close it.
 
-Move your mouse over the image point you want to inspect. Scroll up to zoom in or down to zoom out: that same image point stays under your mouse, even after you have panned. Drag the image to pan. **Fit** returns it to the available viewport; **1:1** shows the image at its natural size. The percentage is relative to that natural size. Use the arrows to move through eligible images. **Esc**, **×**, or an empty area outside the image closes the viewer.
+## Change settings
 
-Direct clicking is off initially so webpage image links remain usable. Modifier clicks such as Ctrl-click continue to follow normal browser behavior.
+Click the IMG Hub icon in Firefox.
 
-## 4. Adjust preferences
+**Direct click to open** lets you open a photo with a click. It starts off so links on web pages still work.
 
-Click the IMG Hub icon in Firefox's extensions menu or toolbar. You can also open **Add-ons and themes → Extensions → IMG Hub → Preferences**.
+**Hover controls** shows the **View image** button when your mouse is over a photo.
 
+**CSS background images** lets the app find photos used as page backgrounds. It starts off.
 
-- **Direct click to open:** opens eligible photos with a normal click.
-- **Hover controls:** shows the View image button.
-- **CSS background images:** adds single background-image URLs. Large decorative backgrounds may qualify.
-- **Minimum image width:** defaults to 160 pixels; accepts 80–2000 pixels. Images also need at least 80 pixels of height.
+**Minimum image width** tells the app how wide a photo must be. It starts at 160 pixels. A pixel is one small dot in a picture.
 
-Click **Save preferences**. Existing pages update immediately. **Reset** restores the defaults. If both hover and direct-click opening are disabled, turn one on to open images again.
+Click **Save preferences** to save your choices. Click **Reset** to go back to the first settings.
 
-## 5. Build a clean package
+Keep either direct click or hover controls on so you can open photos.
 
-For temporary use, the source folder is enough. For Mozilla signing, install Node.js 22 or later and run:
+## Keep it in Firefox
+
+To keep the app after you close Firefox, Mozilla must sign a copy of it.
+
+First, make a ZIP file with just the app files. If you have Node.js 22 or newer, run these commands in the project folder:
 
 ```sh
 npm ci
-npm test
-npm run lint
 npm run build
 ```
 
-Upload `dist/img_hub-0.1.0.zip`, which contains only the extension files. The manifest is at the ZIP root. Renaming an unsigned ZIP to XPI does not make it a permanently installable signed extension.
+The ZIP file is in the `dist` folder. This file is not signed yet.
 
-## 6. Keep it installed permanently
+1. Sign in to the [Mozilla Developer Hub](https://addons.mozilla.org/developers/).
+2. Start a new app submission. Choose **On your own** so it does not need a public page.
+3. Upload the ZIP file from `dist`.
+4. Follow Mozilla's checks.
+5. Download the signed XPI file. This is the file Firefox can keep.
+6. In Firefox, type `about:addons` in the address bar.
+7. Click the gear icon. Choose the option to install an extension from a file.
+8. Choose the signed XPI file and follow the prompt.
 
-1. Sign into the [Mozilla Add-ons Developer Hub](https://addons.mozilla.org/developers/).
-2. Start a new add-on submission and select **On your own** / the unlisted self-distribution option.
-3. Upload the clean ZIP. Complete Mozilla's validation, data declarations, and any review requirements.
-4. Download the **signed XPI** Mozilla provides.
-5. In Firefox, open `about:addons`. Use the gear menu and choose **Install Add-on From File…**.
-6. Select the signed XPI and approve Firefox's installation prompt.
+Changing a ZIP file's name to XPI does not sign it. Mozilla has to sign it first.
 
-Mozilla's [signing overview](https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/) and [self-distributed installation guide](https://extensionworkshop.com/documentation/publish/install-self-distributed/) explain these steps. Unlisted extensions do not need a public marketplace listing, but they still require signing. This repository does not already include a signed XPI or submit anything to Mozilla.
+## Need help?
 
-Keep the manifest's add-on ID stable for future versions. For unlisted releases without an update server, install each newer signed XPI manually. Temporary-install and signed-install profiles may have different saved preferences.
+**No button shows up:** Reload the web page. Check that hover controls are on. Let the app work on the site if Firefox asks.
 
-## Troubleshooting
+**A photo is missing:** It may be too small. Try a lower image width in settings. For a page background, turn on CSS background images.
 
-| Symptom | What to try |
-| --- | --- |
-| No View image button | Reload the webpage after loading IMG Hub, grant site access, enable hover controls, or lower minimum width. |
-| Nothing happens on a Firefox settings or Add-ons page | Use a normal website. Firefox prevents content scripts on restricted pages. |
-| Background photo is missed | Enable CSS backgrounds and allow a moment for discovery. Only single URL backgrounds qualify. |
-| Viewer says the image cannot load | The source may have expired, require authentication, or be blocked by the website. Close it or move to another image. |
-| Image links open instead of the viewer | Enable direct-click opening, or use the hover button. |
-| Navigation misses recently added images | Close and reopen the viewer to collect a fresh gallery. |
-| The extension disappears on restart | Temporary loading lasts only for the current Firefox session. Use a Mozilla-signed XPI for persistent installation. |
-| Install from file says the package is unsigned | Complete the unlisted signing process; the build ZIP is not signed. |
+**A photo will not load:** The site may have blocked it, or the image link may have changed. Try another photo.
 
-For editing and validation, continue with [development instructions](DEVELOPMENT.md).
+**A new photo is not in the viewer:** Close the viewer and open it again.
+
+**The app is gone after a restart:** Add the temporary copy again, or use a signed copy.
+
+**The app does not work on a Firefox settings page:** Try a normal web page. Firefox blocks extensions on some pages.
