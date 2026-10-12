@@ -4,7 +4,7 @@
 
 Open photos, zoom in, and take a closer look.
 
-## Use the helper
+## Use it in your Firefox
 
 On Windows, Mac, or Linux, install Firefox 142 or newer and [Node.js](https://nodejs.org/) 22 or newer.
 
@@ -14,29 +14,41 @@ Download this project. Open a terminal in its folder and run:
 npm start
 ```
 
-The helper downloads its tools on the first run. It then opens a fresh Firefox test window and loads IMG Hub for you.
+The helper gets its tools on the first run. It makes a ZIP file with the app inside. It then opens the setup page in your regular Firefox. If Firefox is already open, it uses that browser.
 
-Keep the terminal open. Run this command each time you want that test window. Each new window starts with fresh settings.
+Click the button to load a temporary extension. Choose the ZIP file whose path is shown in the terminal.
 
-This helper is for computers. Phones need a different setup. A copy signed by Mozilla is still needed to keep IMG Hub in your usual Firefox window.
+Let IMG Hub work on all sites if Firefox asks. It then turns on in your open web tabs. It works in new tabs too. You do not need to load it in each tab or reload every page.
 
-## Get started by hand
+You can close the terminal when you are done with setup.
 
-1. Sign in to GitHub and open this project.
-2. Click **Code**, then **Download ZIP**.
-3. Open the ZIP file. Copy the files into a folder.
-4. Use Firefox 142 or newer.
-5. Type `about:debugging` in the address bar.
-6. Click **This Firefox** on the left.
-7. Click the button to load a temporary extension.
-8. Choose `manifest.json` from your saved folder.
-9. Check that **IMG Hub** is in the list.
+Firefox removes this copy when the browser closes. Load the ZIP again next time. To keep the app, use a copy signed by Mozilla.
 
-You can use the app right away. You do not need Node.js or a build step.
+This helper is for computers. Phones need a different setup.
 
-Open a web page with large photos. Reload the page if it was already open. If Firefox asks to let IMG Hub work on the site, allow it.
+## Try a test window
 
-This copy is removed when you close Firefox. Add it again the next time you open Firefox.
+For a quick test with no file choice, run:
+
+```sh
+npm run try
+```
+
+It opens a separate Firefox test window with IMG Hub already loaded. The app works in all web tabs in that window.
+
+Keep the terminal open. Each new test window starts with fresh settings.
+
+## Start by hand
+
+1. Download this project and open the ZIP file.
+2. Copy the files into a folder.
+3. In Firefox 142 or newer, type `about:debugging`.
+4. Click **This Firefox** on the left.
+5. Click the button to load a temporary extension.
+6. Choose `manifest.json` from your saved folder.
+7. Check that **IMG Hub** is in the list.
+
+You do not need Node.js or a build step for this path. The app turns on in open web tabs after it is loaded.
 
 ## Use the mouse
 
@@ -70,29 +82,26 @@ Keep either direct click or hover controls on so you can open photos.
 
 To keep the app after you close Firefox, Mozilla must sign a copy of it.
 
-First, make a ZIP file with just the app files. If you have Node.js 22 or newer, run these commands in the project folder:
-
-```sh
-npm ci
-npm run build
-```
-
-The ZIP file is in the `dist` folder. This file is not signed yet.
+Run `npm start` or `npm run build` to make a ZIP file. The file path is shown in the terminal. This ZIP is not signed yet.
 
 1. Sign in to the [Mozilla Developer Hub](https://addons.mozilla.org/developers/).
 2. Start a new app submission. Choose **On your own** so it does not need a public page.
 3. Upload the ZIP file from `dist`.
 4. Follow Mozilla's checks.
 5. Download the signed XPI file. This is the file Firefox can keep.
-6. In Firefox, type `about:addons` in the address bar.
+6. In Firefox, type `about:addons`.
 7. Click the gear icon. Choose the option to install an extension from a file.
 8. Choose the signed XPI file and follow the prompt.
+
+The signed copy works across your web tabs each time you open Firefox.
 
 Changing a ZIP file's name to XPI does not sign it. Mozilla has to sign it first.
 
 ## Need help?
 
-**No button shows up:** Reload the web page. Check that hover controls are on. Let the app work on the site if Firefox asks.
+**No setup page opens:** Type `about:debugging` in Firefox and follow the steps above. If you use more than one Firefox profile, load IMG Hub in the one with the tabs you want.
+
+**No button shows up on a web page:** Let IMG Hub work on the site if Firefox asks. Check that hover controls are on. Try reloading that page if it still does not show up.
 
 **A photo is missing:** It may be too small. Try a lower image width in settings. For a page background, turn on CSS background images.
 
@@ -100,6 +109,6 @@ Changing a ZIP file's name to XPI does not sign it. Mozilla has to sign it first
 
 **A new photo is not in the viewer:** Close the viewer and open it again.
 
-**The app is gone after a restart:** Add the temporary copy again, or use a signed copy.
+**The app is gone after a restart:** Load the temporary copy again, or use a signed copy.
 
 **The app does not work on a Firefox settings page:** Try a normal web page. Firefox blocks extensions on some pages.

@@ -5,7 +5,7 @@ const root = path.resolve(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
 const staging = path.join(root, 'dist', 'extension');
 fs.mkdirSync(staging, {recursive: true});
-for (const file of ['manifest.json', 'core.js', 'content.js', 'options.html', 'options.js', 'options.css']) fs.copyFileSync(path.join(root, file), path.join(staging, file));
+for (const file of ['manifest.json', 'background.js', 'core.js', 'content.js', 'options.html', 'options.js', 'options.css']) fs.copyFileSync(path.join(root, file), path.join(staging, file));
 fs.mkdirSync(path.join(staging, 'icons'), {recursive: true});
 for (const size of [16, 32, 48, 128]) fs.copyFileSync(path.join(root, `icons/icon-${size}.png`), path.join(staging, `icons/icon-${size}.png`));
 const executable = path.join(root, 'node_modules/web-ext/bin/web-ext.js');

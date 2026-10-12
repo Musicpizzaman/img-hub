@@ -42,6 +42,14 @@ const server = http.createServer((req, res) => {
       await page.locator('#img-hub-root').waitFor();
     };
     await setup();
+    const duplicatePage = await context.newPage();
+    await duplicatePage.goto(base + '/tests/fixture.html');
+    await duplicatePage.addScriptTag({path:path.join(root,'core.js')});
+    await duplicatePage.evaluate(async source => {
+      await Promise.all([window.eval(source), window.eval(source)]);
+    }, fs.readFileSync(path.join(root,'content.js'),'utf8'));
+    assert.equal(await duplicatePage.locator('#img-hub-root').count(),1);
+    await duplicatePage.close();
     const ui = selector => page.locator('#img-hub-root').locator(selector);
     const openFirst = async () => {
       await page.mouse.move(0,0);

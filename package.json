@@ -1,14 +1,16 @@
 {
   "name": "img-hub",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "A Firefox extension for viewing webpage photos",
   "scripts": {
-    "test": "node --test tests/core.test.cjs tests/start.test.cjs",
+    "test": "node --test tests/core.test.cjs tests/start.test.cjs tests/background.test.cjs",
     "test:browser": "node tests/browser.cjs",
     "lint": "web-ext lint --source-dir . --ignore-files docs/** screenshots/** tests/** scripts/** node_modules/** package*.json *.md .github/** icons/source.svg local-review.diff",
     "build": "node scripts/build.cjs",
-    "start": "node scripts/start.cjs"
+    "start": "node scripts/start.cjs",
+    "try": "node scripts/start.cjs try",
+    "test:tabs": "node tests/tabs.cjs"
   },
   "devDependencies": {
     "playwright": "^1.64.0",

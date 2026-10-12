@@ -1,22 +1,40 @@
-# Compatibility and release checklist
+# Tests
 
-Run `npm test`, `npm run lint`, `npm run test:browser`, and `npm run build`.
+Run the checks in this order.
 
-The automated Firefox checks cover image filtering, modal focus, pointer zoom, pan, navigation, close actions, preserved default links, dynamically inserted images, optional backgrounds, live settings, scroll/style restoration, image-load failures, narrow layouts, and preference save/reset. Their storage implementation is a test double.
+```sh
+npm test
+npm run lint
+npm run test:browser
+npm run build
+npm run test:tabs
+```
 
-Before distributing a signed extension, manually load manifest.json into your desktop Firefox profile:
+The viewer test uses real Firefox. It covers image filtering, focus, zoom under the mouse, pan, navigation, close controls, links, new page images, optional backgrounds, live settings, scroll restore, failed images, small screens, and settings save and reset. Storage is a test double in this test.
 
-- Confirm website access grants and the toolbar popup work.
-- Test a news article, blog, gallery, product page, and an infinite-scroll page.
-- Check a responsive picture/srcset and a lazy-loaded photo.
-- Test a linked photo with direct-click off/on and Ctrl/Shift clicks.
-- Use Tab and Shift-Tab repeatedly; focus should stay in the viewer.
-- Close by Esc, close button, and outside click; the webpage should resume at the same position.
-- Verify an iframe keeps its own gallery and does not affect the parent page's scroll.
-- Save settings, reload Firefox and the temporary extension, and confirm storage persists in that profile.
-- Confirm restricted pages do not show controls.
-- Test the Mozilla-signed XPI separately once signing is complete.
+The zoom checks include the 100% floor, zoom beyond the old limit, and actual raster pixels at 32 times the photo's size.
 
-The initial build is not signed and has not been certified against every website.
+The tab test uses the real extension and built ZIP. It opens two web tabs before installing IMG Hub. It checks those tabs, a new tab, a page reload, and an iframe. Firefox uses a fresh profile that is removed after the test.
 
-The helper has unit checks on Windows, Mac, and Linux in CI. They cover first run tool setup, custom paths with spaces, Flatpak aliases, isolated settings, and failures. Firefox tests also check the 100% floor, zoom beyond the old cap, and actual raster pixels at 32x.
+Helper unit checks run on Windows, Mac, and Linux in CI. They cover the two launch modes, first run tool setup, custom paths with spaces, Flatpak aliases, environment cleanup, and failures.
+
+Before sharing a signed copy, do these desktop checks.
+
+1. Leave two photo tabs open in regular Firefox.
+2. Run npm start, choose the ZIP, and allow access to websites.
+3. Check the viewer in both tabs. Open another tab and check it too.
+4. Close the helper terminal. Firefox should stay open.
+5. Check the toolbar popup and website access controls.
+6. Try a news page, a blog, a gallery, a shop, and a page that loads more as you scroll.
+7. Check a responsive photo and a photo that loads later.
+8. Try linked photos with direct clicks off and on. Check Ctrl and Shift clicks.
+9. Use Tab and Shift plus Tab. Focus should stay inside the viewer.
+10. Close with Esc, the close button, and an empty space click. The page should keep its scroll position.
+11. Check that an iframe uses its own gallery.
+12. Save settings, restart Firefox, load IMG Hub again, and check the settings.
+13. Confirm Firefox settings pages do not show photo controls.
+14. Try npm run try. IMG Hub should load in a separate test window. Other tabs in regular Firefox should stay in that profile.
+15. Repeat the helper checks on Windows, Mac, and Linux.
+16. Test the signed XPI when it is ready.
+
+The current ZIP is unsigned. It has not been checked against every website.

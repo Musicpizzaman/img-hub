@@ -4,6 +4,8 @@
   const C = IMGHubCore;
   let prefs = C.preferences();
   try { prefs = C.preferences((await browser.storage.local.get('preferences')).preferences); } catch { /* Defaults work without storage. */ }
+  // Manifest and open-tab injection can both start while storage is loading.
+  if (document.getElementById('img-hub-root')) return;
   const host = document.createElement('div');
   host.id = 'img-hub-root';
   host.style.cssText = 'all:initial!important;position:fixed!important;inset:0!important;pointer-events:none!important;z-index:2147483647!important;';

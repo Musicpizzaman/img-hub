@@ -16,25 +16,34 @@ This helper works on Windows, Mac, and Linux.
 npm start
 ```
 
-The first run downloads the tools it needs. Then it opens a new Firefox test window with IMG Hub ready to use.
+It makes the app file and opens the setup page in your regular Firefox. Firefox can stay open if it is already running.
 
-Keep the terminal open while you use this window. Close the window when you are done. Run the same command next time.
+Click the button to load a temporary extension. Choose the ZIP file shown in the terminal. Let IMG Hub work on all sites if Firefox asks.
 
-This does not add IMG Hub to your usual Firefox window. To keep it there, use a signed copy. See [more help](docs/SETUP.md).
+IMG Hub then turns on in your open web tabs. It also works in new tabs. You do not need to add it to each tab.
+
+You can close the terminal after setup. Firefox keeps running.
+
+This copy is removed when Firefox closes. Run the same command and load the ZIP again next time. See [more help](docs/SETUP.md) to learn how to keep it.
+
+## Try it fast
+
+To open a separate test window with IMG Hub already loaded, run:
+
+```sh
+npm run try
+```
+
+It works in all web tabs in that test window too. Keep the terminal open while you use it.
 
 ## Start by hand
 
-1. Sign in to GitHub. Click **Code**, then **Download ZIP**.
-2. Open the ZIP file and copy the files into a folder.
-3. In Firefox 142 or newer, type `about:debugging` in the address bar.
-4. Click **This Firefox** on the left.
-5. Click the button to load a temporary extension.
-6. Choose `manifest.json` from the folder you saved.
-7. Open a web page with photos. If the page is already open, reload it.
+1. In Firefox, type `about:debugging` in the address bar.
+2. Click **This Firefox** on the left.
+3. Click the button to load a temporary extension.
+4. Choose `manifest.json` from the project folder.
 
-You do not need to build the app first.
-
-Firefox removes this copy when you close the browser. Follow the same steps to add it again. See [more help](docs/SETUP.md) to learn how to keep it.
+The app turns on in open web tabs and works in new tabs.
 
 ## Look at a photo
 
@@ -50,4 +59,4 @@ Use the arrows to see other photos. Press **Esc** or click **×** to close. You 
 
 Click the IMG Hub icon in Firefox to change settings. Click **Save preferences** when you are done.
 
-Some Firefox pages block extensions. Try a normal web page if the app does not show up.
+Firefox blocks extensions on some pages, such as its settings pages. IMG Hub works on normal web pages where Firefox lets it run.

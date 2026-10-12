@@ -1,12 +1,11 @@
 # Privacy
 
-IMG Hub has no account service, analytics, telemetry, upload endpoint, or advertising integration.
+IMG Hub has no account service, analytics, upload service, or ads.
 
-- Image elements, source URLs, and captions are inspected locally in the webpage to provide the viewer.
-- Preferences are stored with browser.storage.local in your Firefox profile.
-- The viewer loads the existing image source URL. The hosting website may receive an ordinary image request, including its normal browser authentication and referrer behavior.
-- IMG Hub does not store your browsing history or image collection.
-- Website access is used by its content scripts. The storage permission is used for preferences.
-- No personal information is sent to a project backend.
+Images, source URLs, and captions are checked inside the webpage to show the viewer. Preferences stay in browser.storage.local in your Firefox profile.
 
-The manifest declares no data collection for storage or processing outside the extension, using Mozilla's [data consent declaration](https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/).
+The viewer loads the image URL already used by the page. The image host may get a normal image request with the browser's usual login and referrer details.
+
+IMG Hub does not save browsing history or a photo collection. Website access lets it work in web pages. Storage access saves settings. Scripting access turns it on in tabs that were already open. Tab IDs are used for that step and are not saved.
+
+No personal information is sent to a project backend. The manifest declares no data collection outside the extension under Mozilla's [data consent rules](https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/).
