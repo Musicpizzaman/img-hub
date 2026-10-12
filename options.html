@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>IMG Hub preferences</title><link rel="stylesheet" href="options.css"></head>
+<body>
+  <main>
+    <header><img src="icons/icon-48.png" width="48" height="48" alt=""><div><h1>IMG <span>Hub</span></h1><p>Your photos. A closer look.</p></div><small>0.1.0</small></header>
+    <form id="preferences">
+      <label class="setting"><span><strong>Direct click to open</strong><small>Open photos when clicked. Off keeps website links working.</small></span><input type="checkbox" id="directClick"></label>
+      <label class="setting"><span><strong>Hover controls</strong><small>Show the “View image” button over photos.</small></span><input type="checkbox" id="hoverControls"></label>
+      <label class="setting"><span><strong>CSS background images</strong><small>Include large background photos. May also find decorative artwork.</small></span><input type="checkbox" id="backgroundImages"></label>
+      <label class="setting"><span><strong>Minimum image width</strong><small>Ignore images narrower than this many pixels.</small></span><input type="number" id="minWidth" min="80" max="2000" step="10" required aria-label="Minimum image width in pixels"></label>
+      <div class="actions"><button type="submit">Save preferences</button><button type="button" id="reset">Reset</button></div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </form>
+    <aside><strong>A few useful keys</strong><p><kbd>Esc</kbd> close · <kbd>←</kbd> <kbd>→</kbd> browse · <kbd>+</kbd> <kbd>−</kbd> zoom<br><kbd>F</kbd> fit · <kbd>0</kbd> original size · Drag to pan</p></aside>
+    <footer>Preferences stay in this Firefox profile. No analytics or account needed.</footer>
+  </main>
+  <script src="core.js"></script><script src="options.js"></script>
+</body>
+</html>
