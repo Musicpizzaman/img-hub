@@ -49,7 +49,7 @@ The app turns on in open web tabs and works in new tabs.
 
 Move your mouse over a photo. Click **View image** below it. At the edge of the screen, the button may sit above or beside it.
 
-GIFs and animated PNG files keep moving. WebM and other video clips that Firefox can play work too. Click **View clip**, then use **Play**, **Pause**, or **Sound on**. Clips start with sound off.
+GIFs and animated PNG files keep moving. MP4, WebM, and other video clips that Firefox can play work too. Click **View clip**, then use **Play**, **Pause**, or **Sound on**. Clips start with sound off.
 
 IMG Hub also finds tall comic pages, page backgrounds, and photos under a page cover.
 

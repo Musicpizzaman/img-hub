@@ -28,7 +28,7 @@ Media discovery checks img and video elements and accessible component roots. Ea
 
 Hover uses the browser hit layers under the pointer, including sibling covers. An IntersectionObserver keeps a set of candidates in the viewport for images with pointer events off. Pointer moves are handled once per animation frame. The entire page image list is not scanned on each move. Native buttons and form controls keep their own clicks. Firefox's [extension access to closed roots](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/dom/openOrClosedShadowRoot) also allows discovery of closed page components. Native form and media widget roots are skipped.
 
-Background URL parsing handles multiple layers, gradients before an image, and CSS escapes. Each source can join the gallery. Responsive img and video elements use currentSrc. Video source children are supported too. The viewer uses native image and video URLs, so GIF and PNG animation and supported WebM playback remain live. Streams attached through srcObject do not use this URL path.
+Background URL parsing handles multiple layers, gradients before an image, and CSS escapes. Each source can join the gallery. Responsive img and video elements use currentSrc. Video source children are supported too. The viewer uses native image and video URLs, so GIF and PNG animation and supported MP4 and WebM playback remain live. Streams attached through srcObject do not use this URL path.
 
 A shared transform uses the active image or video dimensions. Clips start muted and loop, with separate play and sound controls. Closing or changing media clears handlers, pauses the viewer video, and removes its source. A load token rejects stale callbacks. Playing source clips visited by the viewer are paused and restored on close if still connected with the same source.
 
@@ -58,7 +58,7 @@ The normal helper leaves browser security and profile settings alone. The [Firef
 
 The viewer tests use real Firefox with a storage test double and an open Shadow DOM test seam. They check image and clip controls, editable pixel preferences, independent filters, pointer zoom, and raster pixel rendering. Image discovery tests add actual GIF and PNG frame changes, JPG, PNG, WebP, AVIF, SVG comic pages, sibling covers, pointer events off, shared covers, lazy images, reader page turns, layered backgrounds, and page components.
 
-The tab test installs the built ZIP into a disposable Firefox profile. It checks two tabs opened before installation, a new tab, a page reload, and an iframe using the actual extension APIs. It also opens a covered GIF through the real closed viewer, checks an image inside a closed comic component, and proves WebM playback from changing screenshot pixels. Debugging is enabled only in that disposable test profile.
+The tab test installs the built ZIP into a disposable Firefox profile. It checks two tabs opened before installation, a new tab, a page reload, and an iframe using the actual extension APIs. It also opens a covered GIF through the real closed viewer, checks an image inside a closed comic component, and proves MP4 and WebM playback from changing screenshot pixels. Debugging is enabled only in that disposable test profile.
 
 Helper unit tests run in CI on Windows, Mac, and Linux. They check discovery, launch arguments, tool setup, and failures. A desktop check of an already running Firefox is still needed on each system before a public release. See [the test guide](TESTING.md).
 
@@ -71,3 +71,5 @@ The package is unsigned. Submit it as unlisted through Mozilla for a lasting ins
 ## Tool audit
 
 The extension ZIP has no npm runtime dependencies. The web ext tool has an upstream node forge advisory through its Android adbkit dependency. npm reports three high entries including dependents. IMG Hub does not use Android deployment. A shell quote override removes the known quoting advisory. Recheck npm audit when updating tools. npm audit with development packages left out currently reports zero issues.
+
+MP4 uses the existing native video path, including direct sources and typed source children. H.264 playback depends on the codecs available to Firefox on the computer. See the [Mozilla codec guide](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Video_codecs). The small MP4 test fixture is an original red and blue clip encoded as H.264 baseline with YUV420 pixels and fast start metadata. It has no audio.

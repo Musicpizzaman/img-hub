@@ -4,8 +4,8 @@ const fs = require('node:fs/promises');
 const http = require('node:http');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const types={'.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.gif':'image/gif','.webp':'image/webp','.avif':'image/avif','.webm':'video/webm'};
-const mediaNames=new Set(['animated.webm','animated-large.gif','large.png']);
+const types={'.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.gif':'image/gif','.webp':'image/webp','.avif':'image/avif','.webm':'video/webm','.mp4':'video/mp4'};
+const mediaNames=new Set(['animated.mp4','animated.webm','animated-large.gif','large.png']);
 const names=new Set(['sample.png','sample.jpg','sample.webp','sample.avif','animated.gif','animated.png']);
 const server=http.createServer(async(request,response)=>{
   const pathname=new URL(request.url,'http://localhost').pathname;
@@ -194,6 +194,16 @@ const server=http.createServer(async(request,response)=>{
     await page.locator('#webm-clip').evaluate(video=>video.pause());
 
     await openClip('#child-clip');await close();
+    for (const selector of ['#mp4-clip','#mp4-source-clip']) {
+      await openClip(selector);
+      assert.ok((await ui('#video').getAttribute('src')).includes('animated.mp4'));
+      assert.deepEqual(await ui('#video').evaluate(video=>[video.videoWidth,video.videoHeight]),[192,128]);
+      await ui('#play').click();assert.equal(await ui('#video').evaluate(video=>video.paused),true);
+      await ui('#play').click();await page.waitForFunction(()=>!document.querySelector('#img-hub-root').shadowRoot.querySelector('#video').paused);
+      await close();
+      assert.equal(await ui('#video').getAttribute('src'),null);
+      assert.equal(await ui('#video').evaluate(video=>video.paused),true);
+    }
     await page.setViewportSize({width:390,height:844});
     await openClip('#webm-clip');
     const mobileStage=await ui('#stage').boundingBox(),mobileNav=await ui('nav').boundingBox();
@@ -209,7 +219,7 @@ const server=http.createServer(async(request,response)=>{
     assert.equal(await page.evaluate(()=>window.pageTurns),turns+1);
     assert.equal(await ui('dialog').isVisible(),false);
     assert.deepEqual(errors,[]);
-    console.log('Firefox image checks passed: small images, logos, tall comics, image formats, GIF and APNG animation, covers, page turns, backgrounds components, editable pixel filters, WebM playback, media cleanup and free zoom.');
+    console.log('Firefox image checks passed: small images, logos, tall comics, image formats, GIF and APNG animation, covers, page turns, backgrounds, components, editable pixel filters, WebM and MP4 playback, media cleanup and free zoom.');
   }finally{
     if(browser)await browser.close();
     await new Promise(resolve=>server.close(resolve));

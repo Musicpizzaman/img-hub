@@ -44,5 +44,7 @@ shadow.innerHTML='<img id="component-image" src="/tests/images/sample.webp" widt
 <section><a href="#full-photo"><img id="reduced-picture" src="/tests/images/large.png" width="96" height="48" alt="A smaller linked photo"></a></section>
 <section><video id="webm-clip" src="/tests/images/animated.webm" preload="metadata" muted loop width="384" height="256" aria-label="Animated clip"></video></section>
 <section><video id="child-clip" preload="none" muted width="384" height="256" aria-label="Clip with a source child"><source src="/tests/images/animated.webm?child" type="video/webm"></video></section>
+<section><video id="mp4-clip" src="/tests/images/animated.mp4" preload="metadata" muted loop width="384" height="256" aria-label="MP4 clip"></video></section>
+<section><video id="mp4-source-clip" preload="none" muted width="384" height="256" aria-label="MP4 source choices"><source src="/tests/images/unsupported.bin" type="video/x-unsupported"><source src="/tests/images/animated.mp4?source" type="video/mp4; codecs=&quot;avc1.42E01E&quot;"></video></section>
 <section><video id="native-clip" src="/tests/images/animated.webm?native" preload="metadata" controls muted width="384" height="256" aria-label="Native clip controls"></video></section>
 </body></html>

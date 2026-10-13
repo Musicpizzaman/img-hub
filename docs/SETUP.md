@@ -56,7 +56,7 @@ Move your mouse over a photo and click **View image** below it. Near the edge of
 
 GIFs and animated PNG images keep moving. Tall comic pages and photos under a page cover can open too.
 
-For WebM and other clips that Firefox can play, click **View clip**. Clips start with sound off and play again when they end. Use **Play**, **Pause**, and **Sound on** to control them. Closing the viewer stops its clip.
+For MP4, WebM, and other clips that Firefox can play, click **View clip**. Clips start with sound off and play again when they end. Use **Play**, **Pause**, and **Sound on** to control them. Closing the viewer stops its clip.
 
 For a comic reader, close the viewer before you turn the page on the site. Then open the new picture.
 
